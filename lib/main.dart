@@ -1,0 +1,46 @@
+import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/providers/app_state.dart';
+import 'package:loafncatting_mobile/screens/home_screen.dart';
+import 'package:loafncatting_mobile/screens/login_screen.dart';
+import 'package:loafncatting_mobile/screens/register_screen.dart';
+import 'package:loafncatting_mobile/screens/splash_screen.dart';
+import 'package:loafncatting_mobile/services/api_service.dart';
+import 'package:loafncatting_mobile/theme/app_theme.dart';
+import 'package:provider/provider.dart';
+
+void main() {
+  final api = ApiService();
+  runApp(LoafApp(api: api));
+}
+
+class LoafApp extends StatelessWidget {
+  const LoafApp({super.key, required this.api});
+  final ApiService api;
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider(api)),
+        ChangeNotifierProvider(create: (_) => CatalogProvider(api)),
+        ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider(create: (_) => ReservationProvider(api)),
+        ChangeNotifierProvider(create: (_) => CatProvider(api)),
+        ChangeNotifierProvider(create: (_) => NotificationProvider(api)),
+        ChangeNotifierProvider(create: (_) => LocationProvider(api)),
+        ChangeNotifierProvider(create: (_) => ChatProvider(api)),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: "Loaf'NCatting",
+        theme: buildLoafTheme(),
+        routes: {
+          '/': (_) => const SplashScreen(),
+          '/login': (_) => const LoginScreen(),
+          '/register': (_) => const RegisterScreen(),
+          '/home': (_) => const HomeScreen(),
+        },
+      ),
+    );
+  }
+}
