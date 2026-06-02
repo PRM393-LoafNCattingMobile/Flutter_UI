@@ -3,6 +3,7 @@ import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
 import 'package:loafncatting_mobile/widgets/state_views.dart';
+import 'package:loafncatting_mobile/widgets/store_map.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -32,9 +33,11 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
       body: CafeSurface(
         child: provider.isLoading
             ? const Center(child: CircularProgressIndicator())
-            : location == null
-                ? const EmptyView('Store location is not available.')
-                : ListView(
+            : provider.error != null
+                ? EmptyView(provider.error!)
+                : location == null
+                    ? const EmptyView('Store location is not available.')
+                    : ListView(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                     children: [
                       CafeHeroHeader(
@@ -42,6 +45,11 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
                         subtitle: 'Come for the coffee, stay for the paws.',
                         icon: Icons.location_on,
                       ),
+                      StoreLocationMap(
+                        latitude: location.latitude,
+                        longitude: location.longitude,
+                      ),
+                      const SizedBox(height: 16),
                       CafeCard(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
