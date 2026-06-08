@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/models/models.dart';
@@ -94,25 +95,37 @@ class CartProvider extends ChangeNotifier {
   double get total => items.fold(0, (sum, item) => sum + item.subtotal);
   int get count => items.fold(0, (sum, item) => sum + item.quantity);
 
-  void add(Product product, int quantity) {
+  int add(Product product, int quantity) {
+    if (!product.isAvailable || product.unitInStock <= 0 || quantity <= 0) {
+      return 0;
+    }
     final index =
         items.indexWhere((item) => item.product.productId == product.productId);
+    final currentQuantity = index >= 0 ? items[index].quantity : 0;
+    final nextQuantity =
+        math.min(currentQuantity + quantity, product.unitInStock);
+    final added = nextQuantity - currentQuantity;
+    if (added <= 0) {
+      return 0;
+    }
     if (index >= 0) {
-      items[index].quantity += quantity;
+      items[index].quantity = nextQuantity;
     } else {
-      items.add(CartItem(product: product, quantity: quantity));
+      items.add(CartItem(product: product, quantity: nextQuantity));
     }
     notifyListeners();
+    return added;
   }
 
   void update(Product product, int quantity) {
     final index =
         items.indexWhere((item) => item.product.productId == product.productId);
     if (index < 0) return;
-    if (quantity <= 0) {
+    final nextQuantity = math.min(quantity, product.unitInStock);
+    if (nextQuantity <= 0) {
       items.removeAt(index);
     } else {
-      items[index].quantity = quantity;
+      items[index].quantity = nextQuantity;
     }
     notifyListeners();
   }

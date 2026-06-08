@@ -20,6 +20,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
+    final maxQuantity = product.unitInStock < 1 ? 1 : product.unitInStock;
     return Scaffold(
       appBar: AppBar(title: Text(product.name)),
       body: CafeSurface(
@@ -75,7 +76,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   Text('$quantity',
                       style: Theme.of(context).textTheme.titleLarge),
                   IconButton(
-                      onPressed: () => setState(() => quantity++),
+                      onPressed: product.isAvailable && quantity < maxQuantity
+                          ? () => setState(() => quantity++)
+                          : null,
                       icon: const Icon(Icons.add_circle_outline)),
                   const Spacer(),
                   CafeInfoChip(
@@ -92,13 +95,33 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 ],
               ),
             ),
+            if (product.isAvailable && quantity >= maxQuantity) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Bạn đã chọn tối đa số lượng còn trong kho.',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: loafMuted),
+              ),
+            ],
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: product.isAvailable
                   ? () {
-                      context.read<CartProvider>().add(product, quantity);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Đã thêm vào giỏ')));
+                      final added =
+                          context.read<CartProvider>().add(product, quantity);
+                      final messenger = ScaffoldMessenger.of(context);
+                      messenger.hideCurrentSnackBar();
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            added > 0
+                                ? 'Đã thêm $added món vào giỏ'
+                                : 'Giỏ hàng đã đạt giới hạn tồn kho cho món này',
+                          ),
+                        ),
+                      );
                     }
                   : null,
               icon: const Icon(Icons.add_shopping_cart),

@@ -288,10 +288,14 @@ class ProductTile extends StatelessWidget {
                 FilledButton.icon(
                   onPressed: product.isAvailable
                       ? () {
-                          context.read<CartProvider>().add(product, 1);
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content:
-                                  Text('Đã thêm ${product.name} vào giỏ')));
+                          final added =
+                              context.read<CartProvider>().add(product, 1);
+                          final messenger = ScaffoldMessenger.of(context);
+                          messenger.hideCurrentSnackBar();
+                          messenger.showSnackBar(SnackBar(
+                              content: Text(added > 0
+                                  ? 'Đã thêm ${product.name} vào giỏ'
+                                  : '${product.name} đã đạt giới hạn tồn kho')));
                         }
                       : null,
                   icon: const Icon(Icons.add, size: 18),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
+import 'package:loafncatting_mobile/widgets/cafe_form_fields.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
 import 'package:provider/provider.dart';
 
@@ -12,8 +13,10 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final formKey = GlobalKey<FormState>();
   final loginController = TextEditingController();
   final passwordController = TextEditingController();
+  bool obscurePassword = true;
 
   @override
   void dispose() {
@@ -44,6 +47,8 @@ class _LoginScreenState extends State<LoginScreen> {
               const Positioned(
                   bottom: 74, right: 32, child: _DecorPaw(size: 36)),
               ListView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: const EdgeInsets.fromLTRB(22, 42, 22, 24),
                 children: [
                   const SizedBox(height: 10),
@@ -72,94 +77,95 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 18),
                   CafeCard(
                     padding: const EdgeInsets.fromLTRB(18, 20, 18, 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text('Email or phone',
-                            style: Theme.of(context).textTheme.labelLarge),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: loginController,
-                          decoration: const InputDecoration(
+                    child: Form(
+                      key: formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          CafeTextFormField(
+                            controller: loginController,
+                            labelText: 'Email or phone',
                             hintText: 'Enter email or phone',
-                            prefixIcon: Icon(Icons.mail_outline),
+                            prefixIcon: const Icon(Icons.mail_outline),
+                            textInputAction: TextInputAction.next,
+                            autofillHints: const [
+                              AutofillHints.username,
+                              AutofillHints.email,
+                              AutofillHints.telephoneNumber,
+                            ],
+                            validator: CafeValidators.loginIdentity,
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text('Password',
-                            style: Theme.of(context).textTheme.labelLarge),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: passwordController,
-                          decoration: const InputDecoration(
+                          const SizedBox(height: 16),
+                          CafeTextFormField(
+                            controller: passwordController,
+                            labelText: 'Password',
                             hintText: 'Enter password',
-                            prefixIcon: Icon(Icons.lock_outline),
-                            suffixIcon: Icon(Icons.visibility_outlined),
-                          ),
-                          obscureText: true,
-                        ),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: TextButton(
-                            onPressed: () {},
-                            child: const Text('Forgot password?'),
-                          ),
-                        ),
-                        if (auth.error != null)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Text(auth.error!,
-                                style: TextStyle(
-                                    color:
-                                        Theme.of(context).colorScheme.error)),
-                          ),
-                        FilledButton.icon(
-                          onPressed: auth.isLoading
-                              ? null
-                              : () async {
-                                  final ok = await auth.login(
-                                      loginController.text,
-                                      passwordController.text);
-                                  if (!context.mounted) return;
-                                  if (ok) {
-                                    Navigator.pushReplacementNamed(
-                                        context, '/home');
-                                  }
-                                },
-                          icon: auth.isLoading
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child:
-                                      CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Icon(Icons.pets),
-                          label: const Text('Sign in'),
-                        ),
-                        const SizedBox(height: 18),
-                        Row(
-                          children: [
-                            const Expanded(child: Divider()),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 14),
-                              child: Text('or',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(color: loafMuted)),
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            textInputAction: TextInputAction.done,
+                            autofillHints: const [AutofillHints.password],
+                            validator: CafeValidators.password,
+                            obscureText: obscurePassword,
+                            suffixIcon: IconButton(
+                              onPressed: () => setState(
+                                  () => obscurePassword = !obscurePassword),
+                              icon: Icon(obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined),
                             ),
-                            const Expanded(child: Divider()),
-                          ],
-                        ),
-                        const SizedBox(height: 18),
-                        OutlinedButton.icon(
-                          onPressed: () =>
-                              Navigator.pushNamed(context, '/register'),
-                          icon: const Icon(Icons.person_add_alt_1),
-                          label: const Text('Create account'),
-                        ),
-                      ],
+                            onFieldSubmitted: (_) => _submit(auth),
+                          ),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton(
+                              onPressed: () {},
+                              child: const Text('Forgot password?'),
+                            ),
+                          ),
+                          if (auth.error != null)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Text(auth.error!,
+                                  style: TextStyle(
+                                      color:
+                                          Theme.of(context).colorScheme.error)),
+                            ),
+                          FilledButton.icon(
+                            onPressed: auth.isLoading ? null : () => _submit(auth),
+                            icon: auth.isLoading
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.pets),
+                            label: const Text('Sign in'),
+                          ),
+                          const SizedBox(height: 18),
+                          Row(
+                            children: [
+                              const Expanded(child: Divider()),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 14),
+                                child: Text('or',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(color: loafMuted)),
+                              ),
+                              const Expanded(child: Divider()),
+                            ],
+                          ),
+                          const SizedBox(height: 18),
+                          OutlinedButton.icon(
+                            onPressed: () =>
+                                Navigator.pushNamed(context, '/register'),
+                            icon: const Icon(Icons.person_add_alt_1),
+                            label: const Text('Create account'),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 34),
@@ -179,6 +185,20 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _submit(AuthProvider auth) async {
+    final form = formKey.currentState;
+    if (form == null || !form.validate()) return;
+
+    final ok = await auth.login(
+      loginController.text.trim(),
+      passwordController.text,
+    );
+    if (!mounted) return;
+    if (ok) {
+      Navigator.pushReplacementNamed(context, '/home');
+    }
   }
 }
 
