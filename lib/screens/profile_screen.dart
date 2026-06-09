@@ -40,7 +40,13 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 18),
             FilledButton.icon(
               onPressed: () async {
-                await auth.logout();
+                await SessionCoordinator().logout(
+                  auth: auth,
+                  cart: context.read<CartProvider>(),
+                  reservations: context.read<ReservationProvider>(),
+                  notifications: context.read<NotificationProvider>(),
+                  chat: context.read<ChatProvider>(),
+                );
                 if (!context.mounted) return;
                 Navigator.pushNamedAndRemoveUntil(
                     context, '/login', (_) => false);

@@ -10,6 +10,12 @@ class LoadableProvider extends ChangeNotifier {
   bool isLoading = false;
   String? error;
 
+  @protected
+  void resetLoadState() {
+    isLoading = false;
+    error = null;
+  }
+
   Future<void> run(Future<void> Function() action) async {
     isLoading = true;
     error = null;
@@ -61,6 +67,12 @@ class AuthProvider extends LoadableProvider {
   }
 
   Future<void> logout() async {
+    try {
+      await api.logout();
+    } catch (_) {
+      // Keep local logout resilient even when the backend is unavailable.
+    }
+    resetLoadState();
     user = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('authUser');
@@ -158,6 +170,13 @@ class ReservationProvider extends LoadableProvider {
   Future<void> loadHistory(int userId) async => run(() async {
         reservations = await api.getReservations(userId);
       });
+
+  void clearSession() {
+    resetLoadState();
+    availableTables = [];
+    reservations = [];
+    notifyListeners();
+  }
 }
 
 class CatProvider extends LoadableProvider {
@@ -183,6 +202,12 @@ class NotificationProvider extends LoadableProvider {
         await api.markNotificationRead(id);
         notifications = await api.getNotifications(userId);
       });
+
+  void clearSession() {
+    resetLoadState();
+    notifications = [];
+    notifyListeners();
+  }
 }
 
 class LocationProvider extends LoadableProvider {
@@ -211,4 +236,27 @@ class ChatProvider extends LoadableProvider {
         messages = await api.sendMessage(
             conversation!.conversationId, userId, content);
       });
+
+  void clearSession() {
+    resetLoadState();
+    conversation = null;
+    messages = [];
+    notifyListeners();
+  }
+}
+
+class SessionCoordinator {
+  Future<void> logout({
+    required AuthProvider auth,
+    required CartProvider cart,
+    required ReservationProvider reservations,
+    required NotificationProvider notifications,
+    required ChatProvider chat,
+  }) async {
+    await auth.logout();
+    cart.clear();
+    reservations.clearSession();
+    notifications.clearSession();
+    chat.clearSession();
+  }
 }

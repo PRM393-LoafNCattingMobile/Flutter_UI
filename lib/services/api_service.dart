@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:loafncatting_mobile/core/api_config.dart';
 import 'package:loafncatting_mobile/models/models.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiException implements Exception {
   ApiException(this.message);
@@ -22,20 +23,39 @@ class ApiService {
         .replace(queryParameters: cleanQuery.isEmpty ? null : cleanQuery);
   }
 
+  Future<Map<String, String>> _headers({bool json = false}) async {
+    final headers = <String, String>{};
+    if (json) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('authUser');
+    if (raw != null) {
+      final token = AuthUser.fromJson(jsonDecode(raw)).token;
+      if (token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+    }
+
+    return headers;
+  }
+
   Future<dynamic> _get(String path,
       [Map<String, String?> query = const {}]) async {
-    final response = await _client.get(_uri(path, query));
+    final response =
+        await _client.get(_uri(path, query), headers: await _headers());
     return _decode(response);
   }
 
   Future<dynamic> _post(String path, Map<String, dynamic> body) async {
     final response = await _client.post(_uri(path),
-        headers: {'Content-Type': 'application/json'}, body: jsonEncode(body));
+        headers: await _headers(json: true), body: jsonEncode(body));
     return _decode(response);
   }
 
   Future<void> _put(String path) async {
-    final response = await _client.put(_uri(path));
+    final response = await _client.put(_uri(path), headers: await _headers());
     if (response.statusCode >= 400) {
       throw ApiException(
           response.body.isEmpty ? 'Request failed' : response.body);
@@ -68,6 +88,10 @@ class ApiService {
       'password': password,
     });
     return AuthUser.fromJson(data);
+  }
+
+  Future<void> logout() async {
+    await _post('/auth/logout', const {});
   }
 
   Future<List<Category>> getCategories() async {
