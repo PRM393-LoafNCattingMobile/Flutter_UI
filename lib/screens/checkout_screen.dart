@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
+import 'package:loafncatting_mobile/screens/payment_webview_screen.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:loafncatting_mobile/widgets/cafe_form_fields.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
 import 'package:loafncatting_mobile/widgets/state_views.dart';
 import 'package:provider/provider.dart';
+
+const _bankTransferMethod = 'Chuyển khoản ngân hàng';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -242,8 +245,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       error = null;
     });
 
+    final api = auth.api;
     try {
-      await auth.api.createOrder({
+      final order = await api.createOrder({
         'userId': auth.user!.userId,
         'tableId': null,
         'reservationId': null,
@@ -257,6 +261,30 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 })
             .toList(),
       });
+
+      // Chuyển khoản -> đi qua PayOS (QR MB Bank), poll tới khi trả xong.
+      if (paymentMethod == _bankTransferMethod) {
+        final orderId = order['orderId'] as int;
+        final link = await api.createPaymentLink(orderId);
+        if (!mounted) return;
+        final paid = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PaymentWebViewScreen(
+              api: api,
+              orderId: orderId,
+              checkoutUrl: link['checkoutUrl'] as String,
+            ),
+          ),
+        );
+        if (!mounted) return;
+        if (paid != true) {
+          setState(() =>
+              error = 'Chưa hoàn tất thanh toán. Đơn đang chờ thanh toán.');
+          return;
+        }
+      }
+
       cart.clear();
       if (!mounted) return;
       await showDialog<void>(
