@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
@@ -35,7 +36,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final provider = context.watch<ChatProvider>();
     final userId = context.read<AuthProvider>().user!.userId;
     return Scaffold(
-      appBar: AppBar(title: const Text('Chat')),
+      appBar: AppBar(title: const Text(AppStrings.chatTitle)),
       body: CafeSurface(
         child: Column(
           children: [
@@ -91,8 +92,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       child: TextField(
                         controller: controller,
                         decoration: const InputDecoration(
-                          hintText:
-                              'Ask about hours, reservation, best sellers...',
+                          hintText: AppStrings.chatMessageHint,
                           border: InputBorder.none,
                           enabledBorder: InputBorder.none,
                           focusedBorder: InputBorder.none,

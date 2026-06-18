@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
@@ -28,12 +29,12 @@ class _ReservationHistoryScreenState extends State<ReservationHistoryScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<ReservationProvider>();
     return Scaffold(
-      appBar: AppBar(title: const Text('Reservation History')),
+      appBar: AppBar(title: const Text(AppStrings.reservationHistoryTitle)),
       body: CafeSurface(
         child: provider.isLoading
             ? const Center(child: CircularProgressIndicator())
             : provider.reservations.isEmpty
-                ? const EmptyView('No reservations yet.')
+                ? const EmptyView(AppStrings.reservationHistoryEmptyMessage)
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                     itemCount: provider.reservations.length,
@@ -49,15 +50,16 @@ class _ReservationHistoryScreenState extends State<ReservationHistoryScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('${item.date} ${item.time}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium),
-                                  Text(
-                                      '${item.tableName} - ${item.numberOfGuests} guests',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
+                                   Text('${item.date} ${item.time}',
+                                       style: Theme.of(context)
+                                           .textTheme
+                                           .titleMedium),
+                                   Text(
+                                       AppStrings.reservationHistoryGuestsSummary(
+                                           item.tableName, item.numberOfGuests),
+                                       style: Theme.of(context)
+                                           .textTheme
+                                           .bodySmall
                                           ?.copyWith(color: loafMuted)),
                                 ],
                               ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
@@ -28,12 +29,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final provider = context.watch<NotificationProvider>();
     final userId = context.read<AuthProvider>().user!.userId;
     return Scaffold(
-      appBar: AppBar(title: const Text('Notifications')),
+      appBar: AppBar(title: const Text(AppStrings.notificationsTitle)),
       body: CafeSurface(
         child: provider.isLoading
             ? const Center(child: CircularProgressIndicator())
             : provider.notifications.isEmpty
-                ? const EmptyView('No notifications yet.')
+                ? const EmptyView(AppStrings.notificationsEmptyMessage)
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                     itemCount: provider.notifications.length,

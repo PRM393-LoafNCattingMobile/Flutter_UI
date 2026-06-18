@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/screens/checkout_screen.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
@@ -13,16 +14,16 @@ class CartScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final cart = context.watch<CartProvider>();
     return Scaffold(
-      appBar: AppBar(title: Text('Giỏ hàng (${cart.count})')),
+      appBar: AppBar(title: Text(AppStrings.cartTitle(cart.count))),
       body: CafeSurface(
         child: cart.items.isEmpty
-            ? const EmptyView('Giỏ hàng đang trống.')
+            ? const EmptyView(AppStrings.cartEmptyMessage)
             : ListView(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 children: [
                   const CafeHeroHeader(
-                    title: 'Đơn của bạn',
-                    subtitle: 'Kiểm tra lại món trước khi thanh toán.',
+                    title: AppStrings.cartHeroTitle,
+                    subtitle: AppStrings.cartHeroSubtitle,
                     icon: Icons.shopping_bag,
                   ),
                   ...cart.items.map(
@@ -83,7 +84,7 @@ class CartScreen extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            Text('Tổng cộng',
+                            Text(AppStrings.totalLabel,
                                 style: Theme.of(context)
                                     .textTheme
                                     .titleMedium
@@ -103,7 +104,7 @@ class CartScreen extends StatelessWidget {
                               MaterialPageRoute(
                                   builder: (_) => const CheckoutScreen())),
                           icon: const Icon(Icons.payment),
-                          label: const Text('Thanh toán'),
+                          label: const Text(AppStrings.checkoutButton),
                         ),
                       ],
                     ),

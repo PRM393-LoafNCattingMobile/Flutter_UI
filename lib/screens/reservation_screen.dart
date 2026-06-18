@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/screens/reservation_history_screen.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
@@ -45,7 +46,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reservation'),
+        title: const Text(AppStrings.reservationTitle),
         actions: [
           IconButton(
               onPressed: () => Navigator.push(
@@ -60,8 +61,8 @@ class _ReservationScreenState extends State<ReservationScreen> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
             const CafeHeroHeader(
-              title: 'Reserve a table',
-              subtitle: 'Choose a cozy spot before the cafe fills up.',
+              title: AppStrings.reservationHeroTitle,
+              subtitle: AppStrings.reservationHeroSubtitle,
               icon: Icons.event_available,
             ),
             CafeCard(
@@ -74,7 +75,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
                           child: TextField(
                               controller: dateController,
                               decoration: const InputDecoration(
-                                  labelText: 'Date',
+                                  labelText: AppStrings.dateLabel,
                                   prefixIcon:
                                       Icon(Icons.calendar_today_outlined)))),
                       const SizedBox(width: 10),
@@ -82,17 +83,17 @@ class _ReservationScreenState extends State<ReservationScreen> {
                           child: TextField(
                               controller: timeController,
                               decoration: const InputDecoration(
-                                  labelText: 'Time',
+                                  labelText: AppStrings.timeLabel,
                                   prefixIcon: Icon(Icons.schedule)))),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  TextField(
-                      controller: guestController,
-                      decoration: const InputDecoration(
-                          labelText: 'Guest count',
-                          prefixIcon: Icon(Icons.group_outlined)),
-                      keyboardType: TextInputType.number),
+                   TextField(
+                       controller: guestController,
+                       decoration: const InputDecoration(
+                           labelText: AppStrings.guestCountLabel,
+                           prefixIcon: Icon(Icons.group_outlined)),
+                       keyboardType: TextInputType.number),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     onPressed: () => provider.loadAvailable(
@@ -100,20 +101,20 @@ class _ReservationScreenState extends State<ReservationScreen> {
                         timeController.text,
                         int.tryParse(guestController.text) ?? 1),
                     icon: const Icon(Icons.table_restaurant_outlined),
-                    label: const Text('Load available tables'),
+                    label: const Text(AppStrings.loadAvailableTablesButton),
                   ),
                   if (provider.availableTables.isNotEmpty) ...[
                     const SizedBox(height: 12),
                     DropdownButtonFormField<int>(
                       initialValue: tableId,
                       decoration: const InputDecoration(
-                          labelText: 'Table',
+                          labelText: AppStrings.tableLabel,
                           prefixIcon: Icon(Icons.chair_outlined)),
                       items: provider.availableTables
                           .map((table) => DropdownMenuItem(
                               value: table.tableId,
-                              child: Text(
-                                  '${table.tableName} - ${table.capacity} guests')))
+                              child: Text(AppStrings.reservationTableOption(
+                                  table.tableName, table.capacity))))
                           .toList(),
                       onChanged: (value) => setState(() => tableId = value),
                     ),
@@ -129,19 +130,19 @@ class _ReservationScreenState extends State<ReservationScreen> {
                   TextField(
                       controller: nameController,
                       decoration: const InputDecoration(
-                          labelText: 'Guest name',
+                          labelText: AppStrings.guestNameLabel,
                           prefixIcon: Icon(Icons.person_outline))),
                   const SizedBox(height: 12),
                   TextField(
                       controller: phoneController,
                       decoration: const InputDecoration(
-                          labelText: 'Phone number',
+                          labelText: AppStrings.phoneNumberLabel,
                           prefixIcon: Icon(Icons.phone_outlined))),
                   const SizedBox(height: 12),
                   TextField(
                       controller: noteController,
                       decoration: const InputDecoration(
-                          labelText: 'Note',
+                          labelText: AppStrings.noteLabel,
                           prefixIcon: Icon(Icons.edit_note))),
                 ],
               ),
@@ -169,19 +170,19 @@ class _ReservationScreenState extends State<ReservationScreen> {
                         'note': noteController.text,
                         'tableId': tableId,
                       });
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(ok
-                              ? 'Reservation created'
-                              : 'Reservation failed')));
-                    },
+                       if (!context.mounted) return;
+                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                           content: Text(ok
+                               ? AppStrings.reservationCreatedMessage
+                               : AppStrings.reservationFailedMessage)));
+                     },
               icon: provider.isLoading
                   ? const SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Icons.check_circle_outline),
-              label: const Text('Confirm Reservation'),
+              label: const Text(AppStrings.confirmReservationButton),
             ),
           ],
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/screens/cart_screen.dart';
@@ -46,11 +47,11 @@ class _MenuScreenState extends State<MenuScreen> {
               child: Row(
                 children: [
                   Expanded(
-                    child: TextField(
+                      child: TextField(
                       controller: searchController,
                       decoration: const InputDecoration(
                         prefixIcon: Icon(Icons.search),
-                        hintText: 'Tìm món',
+                        hintText: AppStrings.menuSearchHint,
                       ),
                       onSubmitted: (value) =>
                           catalog.applyFilter(keyword: value),
@@ -89,7 +90,7 @@ class _MenuScreenState extends State<MenuScreen> {
                 children: [
                   ChoiceChip(
                     avatar: const Icon(Icons.pets, size: 17),
-                    label: const Text('Tất cả'),
+                    label: const Text(AppStrings.allCategoryLabel),
                     selected: catalog.selectedCategoryId == null,
                     onSelected: (_) => catalog.applyFilter(categoryId: null),
                   ),
@@ -111,11 +112,11 @@ class _MenuScreenState extends State<MenuScreen> {
               ),
             ),
             CafeSectionTitle(
-              title: 'Popular Picks',
+              title: AppStrings.popularPicksTitle,
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
               subtitle: catalog.products.isEmpty
                   ? null
-                  : '${catalog.products.length} món hôm nay',
+                  : AppStrings.menuItemsToday(catalog.products.length),
             ),
             Expanded(
               child: catalog.isLoading
@@ -123,7 +124,7 @@ class _MenuScreenState extends State<MenuScreen> {
                   : catalog.error != null
                       ? ErrorView(catalog.error!, onRetry: catalog.load)
                       : catalog.products.isEmpty
-                          ? const EmptyView('Không tìm thấy món.')
+                          ? const EmptyView(AppStrings.menuEmptyMessage)
                           : ListView.separated(
                               padding:
                                   const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -176,7 +177,7 @@ class _MenuHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Hello, Cat Lover!',
+                  AppStrings.menuGreeting,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
@@ -184,7 +185,7 @@ class _MenuHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  "Welcome back to Loaf n' Catting",
+                  AppStrings.menuWelcomeBack,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -294,12 +295,13 @@ class ProductTile extends StatelessWidget {
                           messenger.hideCurrentSnackBar();
                           messenger.showSnackBar(SnackBar(
                               content: Text(added > 0
-                                  ? 'Đã thêm ${product.name} vào giỏ'
-                                  : '${product.name} đã đạt giới hạn tồn kho')));
+                                  ? AppStrings.productAddedToCart(product.name)
+                                  : AppStrings.productStockLimitReached(
+                                      product.name))));
                         }
                       : null,
                   icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Thêm'),
+                  label: const Text(AppStrings.addButton),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size(74, 38),
                     padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -309,7 +311,9 @@ class ProductTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 CafeInfoChip(
-                  label: product.isAvailable ? 'Còn hàng' : 'Hết hàng',
+                  label: product.isAvailable
+                      ? AppStrings.inStockLabel
+                      : AppStrings.outOfStockLabel,
                   color: availableColor,
                 ),
               ],

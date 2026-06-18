@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
@@ -55,7 +56,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           ?.copyWith(color: loafOrange)),
                   const SizedBox(height: 12),
                   Text(
-                    product.description ?? 'Món này chưa có mô tả.',
+                    product.description ?? AppStrings.productNoDescription,
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
@@ -83,8 +84,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   const Spacer(),
                   CafeInfoChip(
                     label: product.isAvailable
-                        ? 'Còn ${product.unitInStock}'
-                        : 'Hết hàng',
+                        ? AppStrings.stockCountLabel(product.unitInStock)
+                        : AppStrings.outOfStockLabel,
                     icon: product.isAvailable
                         ? Icons.inventory_2_outlined
                         : Icons.block,
@@ -98,7 +99,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             if (product.isAvailable && quantity >= maxQuantity) ...[
               const SizedBox(height: 8),
               Text(
-                'Bạn đã chọn tối đa số lượng còn trong kho.',
+                AppStrings.maxStockReachedMessage,
                 style: Theme.of(context)
                     .textTheme
                     .bodySmall
@@ -113,19 +114,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           context.read<CartProvider>().add(product, quantity);
                       final messenger = ScaffoldMessenger.of(context);
                       messenger.hideCurrentSnackBar();
-                      messenger.showSnackBar(
+                        messenger.showSnackBar(
                         SnackBar(
                           content: Text(
                             added > 0
-                                ? 'Đã thêm $added món vào giỏ'
-                                : 'Giỏ hàng đã đạt giới hạn tồn kho cho món này',
+                                ? AppStrings.addedItemsToCartMessage(added)
+                                : AppStrings.cartStockLimitReachedMessage,
                           ),
                         ),
                       );
                     }
                   : null,
               icon: const Icon(Icons.add_shopping_cart),
-              label: const Text('Thêm vào giỏ'),
+              label: const Text(AppStrings.addToCartButton),
             ),
           ],
         ),

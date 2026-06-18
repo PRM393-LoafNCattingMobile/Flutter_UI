@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/constants/app_routes.dart';
+import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:loafncatting_mobile/widgets/cafe_form_fields.dart';
@@ -18,7 +20,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final nameController = TextEditingController();
   final phoneController = TextEditingController();
   final noteController = TextEditingController();
-  String paymentMethod = 'Tiền mặt';
+  String paymentMethod = AppStrings.cashPaymentMethod;
   bool placing = false;
   String? error;
   bool didSeedUser = false;
@@ -48,7 +50,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final cart = context.watch<CartProvider>();
     final auth = context.watch<AuthProvider>();
     return Scaffold(
-      appBar: AppBar(title: const Text('Thanh toán')),
+      appBar: AppBar(title: const Text(AppStrings.checkoutTitle)),
       body: CafeSurface(
         child: Builder(
           builder: (context) {
@@ -59,11 +61,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const EmptyView('Giỏ hàng trống, chưa thể thanh toán.'),
+                      const EmptyView(AppStrings.checkoutEmptyCartMessage),
                       const SizedBox(height: 12),
                       FilledButton(
                         onPressed: () => Navigator.pop(context),
-                        child: const Text('Quay lại giỏ hàng'),
+                        child: const Text(AppStrings.backToCartButton),
                       ),
                     ],
                   ),
@@ -77,12 +79,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const ErrorView('Bạn cần đăng nhập trước khi đặt đơn.'),
+                      const ErrorView(AppStrings.checkoutLoginRequiredMessage),
                       const SizedBox(height: 12),
                       FilledButton(
                         onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                            context, '/login', (_) => false),
-                        child: const Text('Đi tới đăng nhập'),
+                            context, AppRoutes.login, (_) => false),
+                        child: const Text(AppStrings.goToLoginButton),
                       ),
                     ],
                   ),
@@ -98,8 +100,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 children: [
                   const CafeHeroHeader(
-                    title: 'Sắp xong rồi',
-                    subtitle: 'Xác nhận thông tin trước khi gửi đơn cho quán.',
+                    title: AppStrings.checkoutHeroTitle,
+                    subtitle: AppStrings.checkoutHeroSubtitle,
                     icon: Icons.receipt_long,
                   ),
                   CafeCard(
@@ -133,7 +135,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         const Divider(),
                         Row(
                           children: [
-                            Text('Tổng cộng',
+                            Text(AppStrings.totalLabel,
                                 style: Theme.of(context).textTheme.titleMedium),
                             const Spacer(),
                             Text(money(cart.total),
@@ -153,19 +155,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       children: [
                         CafeTextFormField(
                           controller: nameController,
-                          labelText: 'Receiver name',
+                          labelText: AppStrings.receiverNameLabel,
                           prefixIcon: const Icon(Icons.person_outline),
                           textInputAction: TextInputAction.next,
                           autofillHints: const [AutofillHints.name],
                           validator: (value) => CafeValidators.name(
                             value,
-                            fieldName: 'receiver name',
+                            fieldName: AppStrings.receiverNameFieldName,
                           ),
                         ),
                         const SizedBox(height: 12),
                         CafeTextFormField(
                           controller: phoneController,
-                          labelText: 'Phone number',
+                          labelText: AppStrings.phoneNumberLabel,
                           prefixIcon: const Icon(Icons.phone_outlined),
                           keyboardType: TextInputType.phone,
                           textInputAction: TextInputAction.next,
@@ -175,8 +177,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         const SizedBox(height: 12),
                         CafeTextFormField(
                           controller: noteController,
-                          labelText: 'Order note',
-                          hintText: 'Ghi chú cho đơn hàng',
+                          labelText: AppStrings.orderNoteLabel,
+                          hintText: AppStrings.orderNoteHint,
                           prefixIcon: const Icon(Icons.edit_note),
                           textInputAction: TextInputAction.newline,
                           maxLines: 3,
@@ -185,13 +187,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         DropdownButtonFormField<String>(
                           initialValue: paymentMethod,
                           decoration: const InputDecoration(
-                              labelText: 'Phương thức thanh toán',
+                              labelText: AppStrings.paymentMethodLabel,
                               prefixIcon: Icon(Icons.payments_outlined)),
                           items: const [
-                            'Tiền mặt',
-                            'Thẻ tín dụng',
-                            'Ví điện tử',
-                            'Chuyển khoản ngân hàng',
+                            AppStrings.cashPaymentMethod,
+                            AppStrings.creditCardPaymentMethod,
+                            AppStrings.eWalletPaymentMethod,
+                            AppStrings.bankTransferPaymentMethod,
                           ]
                               .map((item) =>
                                   DropdownMenuItem(value: item, child: Text(item)))
@@ -221,7 +223,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             height: 18,
                             child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.check_circle_outline),
-                    label: const Text('Đặt đơn'),
+                    label: const Text(AppStrings.placeOrderButton),
                   ),
                 ],
               ),
@@ -247,7 +249,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         'userId': auth.user!.userId,
         'tableId': null,
         'reservationId': null,
-        'orderType': 'Mang đi',
+        'orderType': AppStrings.takeAwayOrderType,
         'note': noteController.text.trim(),
         'paymentMethod': paymentMethod,
         'items': cart.items
@@ -262,14 +264,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       await showDialog<void>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('Đặt đơn thành công'),
+          title: const Text(AppStrings.orderPlacedSuccessTitle),
           content: Text(
-            'Đơn của ${nameController.text.trim()} đã được gửi tới quán.',
+            AppStrings.orderPlacedSuccessMessage(nameController.text.trim()),
           ),
           actions: [
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('OK'),
+              child: const Text(AppStrings.okButton),
             ),
           ],
         ),
