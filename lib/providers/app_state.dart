@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/models/models.dart';
@@ -8,6 +9,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 class LoadableProvider extends ChangeNotifier {
   bool isLoading = false;
   String? error;
+
+  @protected
+  void resetLoadState() {
+    isLoading = false;
+    error = null;
+  }
 
   Future<void> run(Future<void> Function() action) async {
     isLoading = true;
@@ -60,6 +67,12 @@ class AuthProvider extends LoadableProvider {
   }
 
   Future<void> logout() async {
+    try {
+      await api.logout();
+    } catch (_) {
+      // Keep local logout resilient even when the backend is unavailable.
+    }
+    resetLoadState();
     user = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('authUser');
@@ -94,25 +107,37 @@ class CartProvider extends ChangeNotifier {
   double get total => items.fold(0, (sum, item) => sum + item.subtotal);
   int get count => items.fold(0, (sum, item) => sum + item.quantity);
 
-  void add(Product product, int quantity) {
+  int add(Product product, int quantity) {
+    if (!product.isAvailable || product.unitInStock <= 0 || quantity <= 0) {
+      return 0;
+    }
     final index =
         items.indexWhere((item) => item.product.productId == product.productId);
+    final currentQuantity = index >= 0 ? items[index].quantity : 0;
+    final nextQuantity =
+        math.min(currentQuantity + quantity, product.unitInStock);
+    final added = nextQuantity - currentQuantity;
+    if (added <= 0) {
+      return 0;
+    }
     if (index >= 0) {
-      items[index].quantity += quantity;
+      items[index].quantity = nextQuantity;
     } else {
-      items.add(CartItem(product: product, quantity: quantity));
+      items.add(CartItem(product: product, quantity: nextQuantity));
     }
     notifyListeners();
+    return added;
   }
 
   void update(Product product, int quantity) {
     final index =
         items.indexWhere((item) => item.product.productId == product.productId);
     if (index < 0) return;
-    if (quantity <= 0) {
+    final nextQuantity = math.min(quantity, product.unitInStock);
+    if (nextQuantity <= 0) {
       items.removeAt(index);
     } else {
-      items[index].quantity = quantity;
+      items[index].quantity = nextQuantity;
     }
     notifyListeners();
   }
@@ -145,6 +170,13 @@ class ReservationProvider extends LoadableProvider {
   Future<void> loadHistory(int userId) async => run(() async {
         reservations = await api.getReservations(userId);
       });
+
+  void clearSession() {
+    resetLoadState();
+    availableTables = [];
+    reservations = [];
+    notifyListeners();
+  }
 }
 
 class CatProvider extends LoadableProvider {
@@ -170,6 +202,12 @@ class NotificationProvider extends LoadableProvider {
         await api.markNotificationRead(id);
         notifications = await api.getNotifications(userId);
       });
+
+  void clearSession() {
+    resetLoadState();
+    notifications = [];
+    notifyListeners();
+  }
 }
 
 class LocationProvider extends LoadableProvider {
@@ -198,4 +236,27 @@ class ChatProvider extends LoadableProvider {
         messages = await api.sendMessage(
             conversation!.conversationId, userId, content);
       });
+
+  void clearSession() {
+    resetLoadState();
+    conversation = null;
+    messages = [];
+    notifyListeners();
+  }
+}
+
+class SessionCoordinator {
+  Future<void> logout({
+    required AuthProvider auth,
+    required CartProvider cart,
+    required ReservationProvider reservations,
+    required NotificationProvider notifications,
+    required ChatProvider chat,
+  }) async {
+    await auth.logout();
+    cart.clear();
+    reservations.clearSession();
+    notifications.clearSession();
+    chat.clearSession();
+  }
 }

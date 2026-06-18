@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
+import 'package:loafncatting_mobile/widgets/cafe_form_fields.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
 import 'package:provider/provider.dart';
 
@@ -12,10 +13,12 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final formKey = GlobalKey<FormState>();
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final phoneController = TextEditingController();
   final passwordController = TextEditingController();
+  bool obscurePassword = true;
 
   @override
   void dispose() {
@@ -33,6 +36,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       appBar: AppBar(title: const Text('Create account')),
       body: CafeSurface(
         child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
             const SizedBox(height: 14),
@@ -47,78 +51,106 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
             CafeCard(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  TextField(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  children: [
+                    CafeTextFormField(
                       controller: nameController,
-                      decoration: const InputDecoration(
-                          labelText: 'Name',
-                          prefixIcon: Icon(Icons.person_outline))),
-                  const SizedBox(height: 12),
-                  TextField(
-                      controller: emailController,
-                      decoration: const InputDecoration(
-                          labelText: 'Email',
-                          prefixIcon: Icon(Icons.mail_outline))),
-                  const SizedBox(height: 12),
-                  TextField(
-                      controller: phoneController,
-                      decoration: const InputDecoration(
-                          labelText: 'Phone number',
-                          prefixIcon: Icon(Icons.phone_outlined))),
-                  const SizedBox(height: 12),
-                  TextField(
-                      controller: passwordController,
-                      decoration: const InputDecoration(
-                          labelText: 'Password',
-                          prefixIcon: Icon(Icons.lock_outline)),
-                      obscureText: true),
-                  if (auth.error != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: Text(auth.error!,
-                          style: TextStyle(
-                              color: Theme.of(context).colorScheme.error)),
+                      labelText: 'Name',
+                      prefixIcon: const Icon(Icons.person_outline),
+                      textInputAction: TextInputAction.next,
+                      autofillHints: const [AutofillHints.name],
+                      validator: (value) => CafeValidators.name(value),
                     ),
-                  const SizedBox(height: 18),
-                  FilledButton.icon(
-                    onPressed: auth.isLoading
-                        ? null
-                        : () async {
-                            final ok = await auth.register(
-                                nameController.text,
-                                emailController.text,
-                                phoneController.text,
-                                passwordController.text);
-                            if (!context.mounted) return;
-                            if (ok) {
-                              Navigator.pushNamedAndRemoveUntil(
-                                  context, '/home', (_) => false);
-                            }
-                          },
-                    icon: auth.isLoading
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.favorite_outline),
-                    label: const Text('Register'),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Your cafe profile keeps orders and reservations together.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: loafMuted),
-                  ),
-                ],
+                    const SizedBox(height: 12),
+                    CafeTextFormField(
+                      controller: emailController,
+                      labelText: 'Email',
+                      prefixIcon: const Icon(Icons.mail_outline),
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      autofillHints: const [AutofillHints.email],
+                      validator: CafeValidators.email,
+                    ),
+                    const SizedBox(height: 12),
+                    CafeTextFormField(
+                      controller: phoneController,
+                      labelText: 'Phone number',
+                      prefixIcon: const Icon(Icons.phone_outlined),
+                      keyboardType: TextInputType.phone,
+                      textInputAction: TextInputAction.next,
+                      autofillHints: const [AutofillHints.telephoneNumber],
+                      validator: CafeValidators.phone,
+                    ),
+                    const SizedBox(height: 12),
+                    CafeTextFormField(
+                      controller: passwordController,
+                      labelText: 'Password',
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      textInputAction: TextInputAction.done,
+                      autofillHints: const [AutofillHints.newPassword],
+                      validator: CafeValidators.password,
+                      obscureText: obscurePassword,
+                      suffixIcon: IconButton(
+                        onPressed: () => setState(
+                            () => obscurePassword = !obscurePassword),
+                        icon: Icon(obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined),
+                      ),
+                      onFieldSubmitted: (_) => _submit(auth),
+                    ),
+                    if (auth.error != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Text(auth.error!,
+                            style: TextStyle(
+                                color: Theme.of(context).colorScheme.error)),
+                      ),
+                    const SizedBox(height: 18),
+                    FilledButton.icon(
+                      onPressed: auth.isLoading ? null : () => _submit(auth),
+                      icon: auth.isLoading
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.favorite_outline),
+                      label: const Text('Register'),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Your cafe profile keeps orders and reservations together.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: loafMuted),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _submit(AuthProvider auth) async {
+    final form = formKey.currentState;
+    if (form == null || !form.validate()) return;
+
+    final ok = await auth.register(
+      nameController.text.trim(),
+      emailController.text.trim(),
+      phoneController.text.trim(),
+      passwordController.text,
+    );
+    if (!mounted) return;
+    if (ok) {
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
+    }
   }
 }
