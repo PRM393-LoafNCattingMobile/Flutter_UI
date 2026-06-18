@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/constants/app_routes.dart';
+import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:loafncatting_mobile/widgets/cafe_form_fields.dart';
@@ -84,8 +86,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           CafeTextFormField(
                             controller: loginController,
-                            labelText: 'Email or phone',
-                            hintText: 'Enter email or phone',
+                            labelText: AppStrings.loginIdentityLabel,
+                            hintText: AppStrings.loginIdentityHint,
                             prefixIcon: const Icon(Icons.mail_outline),
                             textInputAction: TextInputAction.next,
                             autofillHints: const [
@@ -98,8 +100,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 16),
                           CafeTextFormField(
                             controller: passwordController,
-                            labelText: 'Password',
-                            hintText: 'Enter password',
+                            labelText: AppStrings.passwordLabel,
+                            hintText: AppStrings.passwordHint,
                             prefixIcon: const Icon(Icons.lock_outline),
                             textInputAction: TextInputAction.done,
                             autofillHints: const [AutofillHints.password],
@@ -118,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             alignment: Alignment.centerLeft,
                             child: TextButton(
                               onPressed: () {},
-                              child: const Text('Forgot password?'),
+                              child: const Text(AppStrings.forgotPassword),
                             ),
                           ),
                           if (auth.error != null)
@@ -127,7 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: Text(auth.error!,
                                   style: TextStyle(
                                       color:
-                                          Theme.of(context).colorScheme.error)),
+                                  Theme.of(context).colorScheme.error)),
                             ),
                           FilledButton.icon(
                             onPressed: auth.isLoading ? null : () => _submit(auth),
@@ -139,7 +141,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         strokeWidth: 2),
                                   )
                                 : const Icon(Icons.pets),
-                            label: const Text('Sign in'),
+                            label: const Text(AppStrings.signInButton),
                           ),
                           const SizedBox(height: 18),
                           Row(
@@ -160,9 +162,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 18),
                           OutlinedButton.icon(
                             onPressed: () =>
-                                Navigator.pushNamed(context, '/register'),
+                                Navigator.pushNamed(context, AppRoutes.register),
                             icon: const Icon(Icons.person_add_alt_1),
-                            label: const Text('Create account'),
+                            label: const Text(AppStrings.createAccountButton),
                           ),
                         ],
                       ),
@@ -197,7 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
     if (!mounted) return;
     if (ok) {
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushReplacementNamed(context, AppRoutes.home);
     }
   }
 }

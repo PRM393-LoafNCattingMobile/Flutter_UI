@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/constants/app_routes.dart';
+import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
@@ -12,7 +14,7 @@ class ProfileScreen extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
     final user = auth.user;
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(title: const Text(AppStrings.profileTitle)),
       body: CafeSurface(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -49,10 +51,13 @@ class ProfileScreen extends StatelessWidget {
                 );
                 if (!context.mounted) return;
                 Navigator.pushNamedAndRemoveUntil(
-                    context, '/login', (_) => false);
+                  context,
+                  AppRoutes.login,
+                  (_) => false,
+                );
               },
               icon: const Icon(Icons.logout),
-              label: const Text('Logout'),
+              label: const Text(AppStrings.logoutButton),
             ),
           ],
         ),
