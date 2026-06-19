@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/screens/cat_detail_screen.dart';
@@ -259,7 +260,7 @@ class CatCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 4),
                   Text(
-                    cat.breed ?? 'Unknown breed',
+                    cat.breed ?? AppStrings.unknownBreed,
                     style: Theme.of(context)
                         .textTheme
                         .bodySmall

@@ -58,14 +58,14 @@ class ApiService {
     final response = await _client.put(_uri(path), headers: await _headers());
     if (response.statusCode >= 400) {
       throw ApiException(
-          response.body.isEmpty ? 'Request failed' : response.body);
+          response.body.isEmpty ? 'Yêu cầu thất bại' : response.body);
     }
   }
 
   dynamic _decode(http.Response response) {
     if (response.statusCode >= 400) {
       throw ApiException(
-          response.body.isEmpty ? 'Request failed' : response.body);
+          response.body.isEmpty ? 'Yêu cầu thất bại' : response.body);
     }
     if (response.body.isEmpty) {
       return null;

@@ -49,11 +49,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   Text(product.name,
                       style: Theme.of(context).textTheme.headlineSmall),
                   const SizedBox(height: 8),
-                  Text(money(product.displayPrice),
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(color: loafOrange)),
+                  Text(
+                    money(product.displayPrice),
+                    style: moneyTextStyle(
+                      Theme.of(context).textTheme.titleLarge,
+                      color: loafOrange,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   Text(
                     product.description ?? AppStrings.productNoDescription,
@@ -114,7 +117,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           context.read<CartProvider>().add(product, quantity);
                       final messenger = ScaffoldMessenger.of(context);
                       messenger.hideCurrentSnackBar();
-                        messenger.showSnackBar(
+                      messenger.showSnackBar(
                         SnackBar(
                           content: Text(
                             added > 0

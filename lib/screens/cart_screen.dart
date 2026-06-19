@@ -51,11 +51,14 @@ class CartScreen extends StatelessWidget {
                                       style: Theme.of(context)
                                           .textTheme
                                           .titleMedium),
-                                  Text(money(item.product.displayPrice),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(color: loafMuted)),
+                                  Text(
+                                    money(item.product.displayPrice),
+                                    style: moneyTextStyle(
+                                      Theme.of(context).textTheme.bodySmall,
+                                      color: loafMuted,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -90,11 +93,14 @@ class CartScreen extends StatelessWidget {
                                     .titleMedium
                                     ?.copyWith(color: loafMuted)),
                             const Spacer(),
-                            Text(money(cart.total),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
-                                    ?.copyWith(color: loafOrange)),
+                            Text(
+                              money(cart.total),
+                              style: moneyTextStyle(
+                                Theme.of(context).textTheme.titleLarge,
+                                color: loafOrange,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 14),

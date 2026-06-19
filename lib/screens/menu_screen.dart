@@ -219,7 +219,7 @@ class _MenuHeader extends StatelessWidget {
               IconButton(
                 onPressed: () => Navigator.push(context,
                     MaterialPageRoute(builder: (_) => const CartScreen())),
-                icon: const Icon(Icons.shopping_bag_outlined),
+                icon: const Icon(Icons.receipt_long_outlined),
                 color: Colors.white,
               ),
               if (cartCount > 0)
@@ -297,11 +297,14 @@ class _MenuProductCard extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(money(product.displayPrice),
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(color: loafOrange)),
+                Text(
+                  money(product.displayPrice),
+                  style: moneyTextStyle(
+                    Theme.of(context).textTheme.titleMedium,
+                    color: loafOrange,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 const SizedBox(height: 14),
                 FilledButton.icon(
                   onPressed: product.isAvailable

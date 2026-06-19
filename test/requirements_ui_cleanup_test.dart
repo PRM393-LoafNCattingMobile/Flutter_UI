@@ -15,31 +15,42 @@ import 'package:loafncatting_mobile/screens/menu_screen.dart';
 import 'package:loafncatting_mobile/screens/product_detail_screen.dart';
 import 'package:loafncatting_mobile/screens/reservation_screen.dart';
 import 'package:loafncatting_mobile/services/api_service.dart';
+import 'package:loafncatting_mobile/widgets/state_views.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   test('AppStrings and AppRoutes expose the expected centralized values', () {
     expect(AppStrings.appTitle, "Loaf'NCatting");
-    expect(AppStrings.signInButton, 'Sign in');
-    expect(AppStrings.registerButton, 'Register');
-    expect(AppStrings.homeNavLabel, 'Home');
-    expect(AppStrings.menuSearchHint, 'Search menu');
-    expect(AppStrings.cartTitle(2), 'Cart (2)');
-    expect(AppStrings.menuItemsToday(3), '3 items today');
+    expect(AppStrings.signInButton, 'Đăng nhập');
+    expect(AppStrings.registerButton, 'Đăng ký');
+    expect(AppStrings.homeNavLabel, 'Trang chủ');
+    expect(AppStrings.menuSearchHint, 'Tìm món');
+    expect(AppStrings.cartTitle(2), 'Giỏ hàng (2)');
+    expect(AppStrings.menuItemsToday(3), '3 món hôm nay');
     expect(
       AppStrings.orderPlacedSuccessMessage('Lan'),
-      "Lan's order has been sent to the cafe.",
+      'Đơn của Lan đã được gửi đến quán.',
     );
-    expect(AppStrings.productAddedToCart('Latte'), 'Latte added to cart');
-    expect(AppStrings.stockCountLabel(4), '4 left');
-    expect(AppStrings.addedItemsToCartMessage(1), '1 item added to cart');
-    expect(AppStrings.addedItemsToCartMessage(2), '2 items added to cart');
+    expect(
+      AppStrings.productAddedToCart('Latte'),
+      'Latte đã được thêm vào giỏ hàng',
+    );
+    expect(AppStrings.stockCountLabel(4), 'Còn 4');
+    expect(AppStrings.addedItemsToCartMessage(1), 'Đã thêm 1 món vào giỏ hàng');
+    expect(AppStrings.addedItemsToCartMessage(2), 'Đã thêm 2 món vào giỏ hàng');
+    expect(AppStrings.takeAwayOrderType, 'Mang đi');
+    expect(AppStrings.bankTransferPaymentMethod, 'Chuyển khoản ngân hàng');
 
     expect(AppRoutes.splash, '/');
     expect(AppRoutes.login, '/login');
     expect(AppRoutes.register, '/register');
     expect(AppRoutes.home, '/home');
+  });
+
+  test('money formats prices with dot thousands and VND suffix', () {
+    expect(money(25000), '25.000 VND');
+    expect(money(1250000), '1.250.000 VND');
   });
 
   testWidgets(
@@ -175,6 +186,42 @@ void main() {
     expect(find.text(AppStrings.goToLoginButton), findsOneWidget);
   });
 
+  testWidgets('CheckoutScreen routes bank-transfer orders through PayOS',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final api = _FakeApiService(createPaymentLinkError: 'ĐÃ_GỌI_PAYOS');
+    final auth = AuthProvider(api)..user = _sampleUser();
+    final cart = CartProvider()..add(_sampleProduct(), 1);
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        child: const CheckoutScreen(),
+        api: api,
+        auth: auth,
+        cart: cart,
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(AppStrings.bankTransferPaymentMethod).last);
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text(AppStrings.placeOrderButton));
+    await tester.tap(find.text(AppStrings.placeOrderButton));
+    await tester.pump();
+
+    expect(api.createOrderCallCount, 1);
+    expect(api.createPaymentLinkCallCount, 1);
+    expect(api.lastCreateOrderBody?['paymentMethod'],
+        AppStrings.bankTransferPaymentMethod);
+    expect(api.lastCreateOrderBody?['orderType'], AppStrings.takeAwayOrderType);
+    expect(find.text('ĐÃ_GỌI_PAYOS'), findsOneWidget);
+  });
+
   testWidgets('ReservationScreen guards the unauthenticated flow safely',
       (tester) async {
     await tester.pumpWidget(
@@ -218,6 +265,7 @@ void main() {
 
     expect(find.text(AppStrings.menuSearchHint), findsOneWidget);
     expect(find.text(AppStrings.popularPicksTitle), findsOneWidget);
+    expect(find.byIcon(Icons.receipt_long_outlined), findsOneWidget);
     expect(find.text('Latte'), findsAtLeastNWidgets(1));
     expect(find.text(AppStrings.addButton), findsOneWidget);
 
@@ -521,12 +569,17 @@ class _FakeApiService extends ApiService {
     this.products = const <Product>[],
     this.availableTables = const <CafeTable>[],
     this.availableTablesByRequest = const <String, List<CafeTable>>{},
+    this.createPaymentLinkError,
   });
 
   final List<Category> categories;
   final List<Product> products;
   final List<CafeTable> availableTables;
   final Map<String, List<CafeTable>> availableTablesByRequest;
+  final String? createPaymentLinkError;
+  int createOrderCallCount = 0;
+  int createPaymentLinkCallCount = 0;
+  Map<String, dynamic>? lastCreateOrderBody;
 
   @override
   Future<List<Category>> getCategories() async => categories;
@@ -558,4 +611,20 @@ class _FakeApiService extends ApiService {
         tableId: body['tableId'] as int,
         tableName: 'Window 2',
       );
+
+  @override
+  Future<Map<String, dynamic>> createOrder(Map<String, dynamic> body) async {
+    createOrderCallCount += 1;
+    lastCreateOrderBody = body;
+    return {'orderId': 99};
+  }
+
+  @override
+  Future<Map<String, dynamic>> createPaymentLink(int orderId) async {
+    createPaymentLinkCallCount += 1;
+    if (createPaymentLinkError != null) {
+      throw ApiException(createPaymentLinkError!);
+    }
+    return {'checkoutUrl': 'https://example.com/payos/$orderId'};
+  }
 }

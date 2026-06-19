@@ -1,4 +1,7 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
 
@@ -53,7 +56,10 @@ class ErrorView extends StatelessWidget {
                 style: TextStyle(color: Theme.of(context).colorScheme.error)),
             if (onRetry != null) ...[
               const SizedBox(height: 12),
-              OutlinedButton(onPressed: onRetry, child: const Text('Retry')),
+              OutlinedButton(
+                onPressed: onRetry,
+                child: const Text(AppStrings.retryButton),
+              ),
             ],
           ],
         ),
@@ -62,4 +68,22 @@ class ErrorView extends StatelessWidget {
   }
 }
 
-String money(double value) => '${value.toStringAsFixed(0)} VND';
+String money(double value) {
+  final digits = value.toStringAsFixed(0);
+  final formatted = digits.replaceAllMapped(
+    RegExp(r'\B(?=(\d{3})+(?!\d))'),
+    (_) => '.',
+  );
+  return '$formatted VND';
+}
+
+TextStyle? moneyTextStyle(
+  TextStyle? style, {
+  Color? color,
+  FontWeight? fontWeight,
+}) =>
+    style?.copyWith(
+      color: color,
+      fontWeight: fontWeight,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );

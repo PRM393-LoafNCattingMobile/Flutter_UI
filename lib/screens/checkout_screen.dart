@@ -9,8 +9,6 @@ import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
 import 'package:loafncatting_mobile/widgets/state_views.dart';
 import 'package:provider/provider.dart';
 
-const _bankTransferMethod = 'Chuyển khoản ngân hàng';
-
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
 
@@ -175,7 +173,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       });
 
       // Chuyển khoản -> đi qua PayOS (QR MB Bank), poll tới khi trả xong.
-      if (paymentMethod == _bankTransferMethod) {
+      if (paymentMethod == AppStrings.bankTransferPaymentMethod) {
         final orderId = order['orderId'] as int;
         final link = await api.createPaymentLink(orderId);
         if (!mounted) return;
@@ -257,10 +255,11 @@ class _CheckoutSummaryCard extends StatelessWidget {
                   const SizedBox(width: 12),
                   Text(
                     money(item.subtotal),
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(color: loafOrange),
+                    style: moneyTextStyle(
+                      Theme.of(context).textTheme.titleSmall,
+                      color: loafOrange,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),
@@ -276,10 +275,11 @@ class _CheckoutSummaryCard extends StatelessWidget {
               const Spacer(),
               Text(
                 money(cart.total),
-                style: Theme.of(context)
-                    .textTheme
-                    .titleLarge
-                    ?.copyWith(color: loafOrange),
+                style: moneyTextStyle(
+                  Theme.of(context).textTheme.titleLarge,
+                  color: loafOrange,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ],
           ),

@@ -68,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 34),
                   Text(
-                    'Good coffee. Great cats.',
+                    AppStrings.loginFooterTagline,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           color: Colors.white,
@@ -118,7 +118,7 @@ class _LoginHeader extends StatelessWidget {
               border: Border.all(color: loafOrange.withValues(alpha: .2)),
             ),
             child: Text(
-              'Cat Cafe & Good Bites',
+              AppStrings.loginHeroBadge,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     color: loafBrown,
@@ -224,7 +224,7 @@ class _LoginFormCard extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   child: Text(
-                    'or',
+                    AppStrings.loginDividerLabel,
                     style: Theme.of(context)
                         .textTheme
                         .bodySmall

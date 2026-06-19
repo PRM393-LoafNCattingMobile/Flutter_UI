@@ -20,8 +20,10 @@ class ProfileScreen extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
             CafeHeroHeader(
-              title: user?.name ?? 'Cafe guest',
-              subtitle: user?.roleName ?? 'Loaf n\' Catting member',
+              title: user?.name ?? AppStrings.profileGuestTitle,
+              subtitle: user == null
+                  ? AppStrings.profileGuestSubtitle
+                  : AppStrings.localizedRoleName(user.roleName),
               icon: Icons.person,
             ),
             CafeCard(
@@ -29,12 +31,12 @@ class ProfileScreen extends StatelessWidget {
                 children: [
                   _ProfileRow(
                       icon: Icons.mail_outline,
-                      label: 'Email',
+                      label: AppStrings.emailLabel,
                       value: user?.email ?? ''),
                   const Divider(height: 22),
                   _ProfileRow(
                       icon: Icons.phone_outlined,
-                      label: 'Phone',
+                      label: AppStrings.phoneLabel,
                       value: user?.phoneNumber ?? ''),
                 ],
               ),

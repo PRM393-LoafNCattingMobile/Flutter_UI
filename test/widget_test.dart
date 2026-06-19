@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/screens/login_screen.dart';
@@ -54,12 +55,11 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Sign in'));
+    await tester.tap(find.text(AppStrings.signInButton));
     await tester.pump();
 
-    expect(
-        find.text('Please enter your email or phone number'), findsOneWidget);
-    expect(find.text('Please enter your password'), findsOneWidget);
+    expect(find.text('Vui lòng nhập email hoặc số điện thoại'), findsOneWidget);
+    expect(find.text('Vui lòng nhập mật khẩu'), findsOneWidget);
   });
 
   testWidgets('Register screen validates empty fields before submit',
@@ -77,13 +77,13 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Register'));
+    await tester.tap(find.text(AppStrings.registerButton));
     await tester.pump();
 
-    expect(find.text('Please enter your name'), findsOneWidget);
-    expect(find.text('Please enter your email'), findsOneWidget);
-    expect(find.text('Please enter your phone number'), findsOneWidget);
-    expect(find.text('Please enter your password'), findsOneWidget);
+    expect(find.text('Vui lòng nhập tên của bạn'), findsOneWidget);
+    expect(find.text('Vui lòng nhập email'), findsOneWidget);
+    expect(find.text('Vui lòng nhập số điện thoại'), findsOneWidget);
+    expect(find.text('Vui lòng nhập mật khẩu'), findsOneWidget);
   });
 
   test('SessionCoordinator logout clears persisted and in-memory session data',

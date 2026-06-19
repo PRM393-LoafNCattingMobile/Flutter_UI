@@ -94,8 +94,8 @@ class _RegisterHeader extends StatelessWidget {
         ),
         SizedBox(height: 16),
         CafeHeroHeader(
-          title: 'Join the cafe',
-          subtitle: 'Order faster, reserve cozy tables, and meet the cats.',
+          title: AppStrings.registerHeroTitle,
+          subtitle: AppStrings.registerHeroSubtitle,
           icon: Icons.pets,
         ),
       ],
@@ -136,7 +136,7 @@ class _RegisterFormCard extends StatelessWidget {
           children: [
             CafeTextFormField(
               controller: nameController,
-              labelText: 'Name',
+              labelText: AppStrings.guestNameLabel,
               prefixIcon: const Icon(Icons.person_outline),
               textInputAction: TextInputAction.next,
               autofillHints: const [AutofillHints.name],
@@ -145,7 +145,7 @@ class _RegisterFormCard extends StatelessWidget {
             const SizedBox(height: 12),
             CafeTextFormField(
               controller: emailController,
-              labelText: 'Email',
+              labelText: AppStrings.emailLabel,
               prefixIcon: const Icon(Icons.mail_outline),
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
@@ -155,7 +155,7 @@ class _RegisterFormCard extends StatelessWidget {
             const SizedBox(height: 12),
             CafeTextFormField(
               controller: phoneController,
-              labelText: 'Phone number',
+              labelText: AppStrings.phoneNumberLabel,
               prefixIcon: const Icon(Icons.phone_outlined),
               keyboardType: TextInputType.phone,
               textInputAction: TextInputAction.next,
@@ -165,7 +165,7 @@ class _RegisterFormCard extends StatelessWidget {
             const SizedBox(height: 12),
             CafeTextFormField(
               controller: passwordController,
-              labelText: 'Password',
+              labelText: AppStrings.passwordLabel,
               prefixIcon: const Icon(Icons.lock_outline),
               textInputAction: TextInputAction.done,
               autofillHints: const [AutofillHints.newPassword],
@@ -201,7 +201,7 @@ class _RegisterFormCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Your cafe profile keeps orders and reservations together.',
+              AppStrings.registerHelperText,
               textAlign: TextAlign.center,
               style: Theme.of(context)
                   .textTheme
