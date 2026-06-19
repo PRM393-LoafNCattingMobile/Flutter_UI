@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/constants/app_routes.dart';
+import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
@@ -12,14 +14,16 @@ class ProfileScreen extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
     final user = auth.user;
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(title: const Text(AppStrings.profileTitle)),
       body: CafeSurface(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
             CafeHeroHeader(
-              title: user?.name ?? 'Cafe guest',
-              subtitle: user?.roleName ?? 'Loaf n\' Catting member',
+              title: user?.name ?? AppStrings.profileGuestTitle,
+              subtitle: user == null
+                  ? AppStrings.profileGuestSubtitle
+                  : AppStrings.localizedRoleName(user.roleName),
               icon: Icons.person,
             ),
             CafeCard(
@@ -27,12 +31,12 @@ class ProfileScreen extends StatelessWidget {
                 children: [
                   _ProfileRow(
                       icon: Icons.mail_outline,
-                      label: 'Email',
+                      label: AppStrings.emailLabel,
                       value: user?.email ?? ''),
                   const Divider(height: 22),
                   _ProfileRow(
                       icon: Icons.phone_outlined,
-                      label: 'Phone',
+                      label: AppStrings.phoneLabel,
                       value: user?.phoneNumber ?? ''),
                 ],
               ),
@@ -49,10 +53,13 @@ class ProfileScreen extends StatelessWidget {
                 );
                 if (!context.mounted) return;
                 Navigator.pushNamedAndRemoveUntil(
-                    context, '/login', (_) => false);
+                  context,
+                  AppRoutes.login,
+                  (_) => false,
+                );
               },
               icon: const Icon(Icons.logout),
-              label: const Text('Logout'),
+              label: const Text(AppStrings.logoutButton),
             ),
           ],
         ),

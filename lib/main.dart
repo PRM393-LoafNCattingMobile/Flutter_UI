@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/constants/app_routes.dart';
+import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/screens/home_screen.dart';
 import 'package:loafncatting_mobile/screens/login_screen.dart';
@@ -32,13 +34,13 @@ class LoafApp extends StatelessWidget {
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: "Loaf'NCatting",
+        title: AppStrings.appTitle,
         theme: buildLoafTheme(),
         routes: {
-          '/': (_) => const SplashScreen(),
-          '/login': (_) => const LoginScreen(),
-          '/register': (_) => const RegisterScreen(),
-          '/home': (_) => const HomeScreen(),
+          AppRoutes.splash: (_) => const SplashScreen(),
+          AppRoutes.login: (_) => const LoginScreen(),
+          AppRoutes.register: (_) => const RegisterScreen(),
+          AppRoutes.home: (_) => const HomeScreen(),
         },
       ),
     );

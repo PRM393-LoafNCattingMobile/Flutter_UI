@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/screens/cart_screen.dart';
@@ -41,45 +42,9 @@ class _MenuScreenState extends State<MenuScreen> {
         child: Column(
           children: [
             const _MenuHeader(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: searchController,
-                      decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.search),
-                        hintText: 'Tìm món',
-                      ),
-                      onSubmitted: (value) =>
-                          catalog.applyFilter(keyword: value),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: loafBorder),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x14D2691E),
-                          blurRadius: 14,
-                          offset: Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: IconButton(
-                      onPressed: () =>
-                          catalog.applyFilter(keyword: searchController.text),
-                      icon: const Icon(Icons.tune),
-                    ),
-                  ),
-                ],
-              ),
+            _MenuSearchBar(
+              searchController: searchController,
+              onApplyFilter: (value) => catalog.applyFilter(keyword: value),
             ),
             SizedBox(
               height: 54,
@@ -89,7 +54,7 @@ class _MenuScreenState extends State<MenuScreen> {
                 children: [
                   ChoiceChip(
                     avatar: const Icon(Icons.pets, size: 17),
-                    label: const Text('Tất cả'),
+                    label: const Text(AppStrings.allCategoryLabel),
                     selected: catalog.selectedCategoryId == null,
                     onSelected: (_) => catalog.applyFilter(categoryId: null),
                   ),
@@ -111,11 +76,11 @@ class _MenuScreenState extends State<MenuScreen> {
               ),
             ),
             CafeSectionTitle(
-              title: 'Popular Picks',
+              title: AppStrings.popularPicksTitle,
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
               subtitle: catalog.products.isEmpty
                   ? null
-                  : '${catalog.products.length} món hôm nay',
+                  : AppStrings.menuItemsToday(catalog.products.length),
             ),
             Expanded(
               child: catalog.isLoading
@@ -123,19 +88,72 @@ class _MenuScreenState extends State<MenuScreen> {
                   : catalog.error != null
                       ? ErrorView(catalog.error!, onRetry: catalog.load)
                       : catalog.products.isEmpty
-                          ? const EmptyView('Không tìm thấy món.')
+                          ? const EmptyView(AppStrings.menuEmptyMessage)
                           : ListView.separated(
                               padding:
                                   const EdgeInsets.fromLTRB(16, 12, 16, 24),
                               itemCount: catalog.products.length,
                               separatorBuilder: (_, __) =>
                                   const SizedBox(height: 12),
-                              itemBuilder: (_, index) =>
-                                  ProductTile(product: catalog.products[index]),
+                              itemBuilder: (_, index) => _MenuProductCard(
+                                product: catalog.products[index],
+                              ),
                             ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _MenuSearchBar extends StatelessWidget {
+  const _MenuSearchBar({
+    required this.searchController,
+    required this.onApplyFilter,
+  });
+
+  final TextEditingController searchController;
+  final ValueChanged<String> onApplyFilter;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: searchController,
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.search),
+                hintText: AppStrings.menuSearchHint,
+              ),
+              onSubmitted: onApplyFilter,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: loafBorder),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x14D2691E),
+                  blurRadius: 14,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: IconButton(
+              onPressed: () => onApplyFilter(searchController.text),
+              icon: const Icon(Icons.tune),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -176,7 +194,7 @@ class _MenuHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Hello, Cat Lover!',
+                  AppStrings.menuGreeting,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
@@ -184,7 +202,7 @@ class _MenuHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  "Welcome back to Loaf n' Catting",
+                  AppStrings.menuWelcomeBack,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -201,7 +219,7 @@ class _MenuHeader extends StatelessWidget {
               IconButton(
                 onPressed: () => Navigator.push(context,
                     MaterialPageRoute(builder: (_) => const CartScreen())),
-                icon: const Icon(Icons.shopping_bag_outlined),
+                icon: const Icon(Icons.receipt_long_outlined),
                 color: Colors.white,
               ),
               if (cartCount > 0)
@@ -228,8 +246,8 @@ class _MenuHeader extends StatelessWidget {
   }
 }
 
-class ProductTile extends StatelessWidget {
-  const ProductTile({super.key, required this.product});
+class _MenuProductCard extends StatelessWidget {
+  const _MenuProductCard({required this.product});
   final Product product;
 
   @override
@@ -279,11 +297,14 @@ class ProductTile extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(money(product.displayPrice),
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(color: loafOrange)),
+                Text(
+                  money(product.displayPrice),
+                  style: moneyTextStyle(
+                    Theme.of(context).textTheme.titleMedium,
+                    color: loafOrange,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 const SizedBox(height: 14),
                 FilledButton.icon(
                   onPressed: product.isAvailable
@@ -294,12 +315,13 @@ class ProductTile extends StatelessWidget {
                           messenger.hideCurrentSnackBar();
                           messenger.showSnackBar(SnackBar(
                               content: Text(added > 0
-                                  ? 'Đã thêm ${product.name} vào giỏ'
-                                  : '${product.name} đã đạt giới hạn tồn kho')));
+                                  ? AppStrings.productAddedToCart(product.name)
+                                  : AppStrings.productStockLimitReached(
+                                      product.name))));
                         }
                       : null,
                   icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Thêm'),
+                  label: const Text(AppStrings.addButton),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size(74, 38),
                     padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -309,7 +331,9 @@ class ProductTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 CafeInfoChip(
-                  label: product.isAvailable ? 'Còn hàng' : 'Hết hàng',
+                  label: product.isAvailable
+                      ? AppStrings.inStockLabel
+                      : AppStrings.outOfStockLabel,
                   color: availableColor,
                 ),
               ],

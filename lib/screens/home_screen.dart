@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/screens/cat_gallery_screen.dart';
 import 'package:loafncatting_mobile/screens/menu_screen.dart';
 import 'package:loafncatting_mobile/screens/more_screen.dart';
@@ -34,23 +35,23 @@ class _HomeScreenState extends State<HomeScreen> {
           NavigationDestination(
               icon: Icon(Icons.home_outlined),
               selectedIcon: Icon(Icons.home),
-              label: 'Home'),
+              label: AppStrings.homeNavLabel),
           NavigationDestination(
               icon: Icon(Icons.local_cafe_outlined),
               selectedIcon: Icon(Icons.local_cafe),
-              label: 'Menu'),
+              label: AppStrings.menuNavLabel),
           NavigationDestination(
               icon: Icon(Icons.calendar_month_outlined),
               selectedIcon: Icon(Icons.calendar_month),
-              label: 'Reservations'),
+              label: AppStrings.reservationsNavLabel),
           NavigationDestination(
               icon: Icon(Icons.pets_outlined),
               selectedIcon: Icon(Icons.pets),
-              label: 'Cats'),
+              label: AppStrings.catsNavLabel),
           NavigationDestination(
               icon: Icon(Icons.person_outline),
               selectedIcon: Icon(Icons.person),
-              label: 'Profile'),
+              label: AppStrings.profileNavLabel),
         ],
       ),
     );

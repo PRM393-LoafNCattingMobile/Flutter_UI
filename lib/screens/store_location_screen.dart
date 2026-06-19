@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
@@ -29,20 +30,20 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
     final provider = context.watch<LocationProvider>();
     final location = provider.location;
     return Scaffold(
-      appBar: AppBar(title: const Text('Store Location')),
+      appBar: AppBar(title: const Text(AppStrings.storeLocationTitle)),
       body: CafeSurface(
         child: provider.isLoading
             ? const Center(child: CircularProgressIndicator())
             : provider.error != null
                 ? EmptyView(provider.error!)
                 : location == null
-                    ? const EmptyView('Store location is not available.')
+                    ? const EmptyView(AppStrings.storeLocationUnavailableMessage)
                     : ListView(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                     children: [
                       CafeHeroHeader(
                         title: location.storeName,
-                        subtitle: 'Come for the coffee, stay for the paws.',
+                        subtitle: AppStrings.storeLocationHeroSubtitle,
                         icon: Icons.location_on,
                       ),
                       StoreLocationMap(
@@ -80,7 +81,7 @@ class _StoreLocationScreenState extends State<StoreLocationScreen> {
                           launchUrl(uri, mode: LaunchMode.externalApplication);
                         },
                         icon: const Icon(Icons.directions),
-                        label: const Text('Open directions'),
+                        label: const Text(AppStrings.openDirectionsButton),
                       ),
                     ],
                   ),

@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 class CafeValidators {
   static String? requiredField(String? value, String fieldName) {
     if (value == null || value.trim().isEmpty) {
-      return 'Please enter $fieldName';
+      return 'Vui lòng nhập $fieldName';
     }
     return null;
   }
 
   static String? loginIdentity(String? value) {
-    final required = requiredField(value, 'your email or phone number');
+    final required = requiredField(value, 'email hoặc số điện thoại');
     if (required != null) return required;
 
     final text = value!.trim();
@@ -18,45 +18,45 @@ class CafeValidators {
     }
     final digits = text.replaceAll(RegExp(r'\D'), '');
     if (digits.length < 9) {
-      return 'Enter a valid phone number';
+      return 'Vui lòng nhập số điện thoại hợp lệ';
     }
     return null;
   }
 
-  static String? name(String? value, {String fieldName = 'your name'}) {
+  static String? name(String? value, {String fieldName = 'tên của bạn'}) {
     final required = requiredField(value, fieldName);
     if (required != null) return required;
     if (value!.trim().length < 2) {
-      return 'Name must be at least 2 characters';
+      return 'Tên phải có ít nhất 2 ký tự';
     }
     return null;
   }
 
   static String? email(String? value) {
-    final required = requiredField(value, 'your email');
+    final required = requiredField(value, 'email');
     if (required != null) return required;
     final emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
     if (!emailPattern.hasMatch(value!.trim())) {
-      return 'Enter a valid email address';
+      return 'Vui lòng nhập địa chỉ email hợp lệ';
     }
     return null;
   }
 
   static String? phone(String? value) {
-    final required = requiredField(value, 'your phone number');
+    final required = requiredField(value, 'số điện thoại');
     if (required != null) return required;
     final digits = value!.replaceAll(RegExp(r'\D'), '');
     if (digits.length < 9) {
-      return 'Enter a valid phone number';
+      return 'Vui lòng nhập số điện thoại hợp lệ';
     }
     return null;
   }
 
   static String? password(String? value) {
-    final required = requiredField(value, 'your password');
+    final required = requiredField(value, 'mật khẩu');
     if (required != null) return required;
     if (value!.trim().length < 6) {
-      return 'Password must be at least 6 characters';
+      return 'Mật khẩu phải có ít nhất 6 ký tự';
     }
     return null;
   }

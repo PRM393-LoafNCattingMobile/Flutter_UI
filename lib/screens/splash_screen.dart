@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/constants/app_routes.dart';
+import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
 import 'package:provider/provider.dart';
@@ -19,8 +21,9 @@ class _SplashScreenState extends State<SplashScreen> {
       final auth = context.read<AuthProvider>();
       auth.loadSession().then((_) {
         if (!mounted) return;
-        Navigator.of(context)
-            .pushReplacementNamed(auth.isLoggedIn ? '/home' : '/login');
+        Navigator.of(context).pushReplacementNamed(
+          auth.isLoggedIn ? AppRoutes.home : AppRoutes.login,
+        );
       });
     });
   }
@@ -36,7 +39,7 @@ class _SplashScreenState extends State<SplashScreen> {
               CafeIconBadge(icon: Icons.pets, size: 72),
               SizedBox(height: 18),
               Text(
-                "Loaf'NCatting",
+                AppStrings.appTitle,
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
               ),
               SizedBox(height: 16),

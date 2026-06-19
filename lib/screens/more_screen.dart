@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/screens/chat_screen.dart';
 import 'package:loafncatting_mobile/screens/notifications_screen.dart';
 import 'package:loafncatting_mobile/screens/profile_screen.dart';
@@ -12,35 +13,35 @@ class MoreScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('More')),
+      appBar: AppBar(title: const Text(AppStrings.moreTitle)),
       body: CafeSurface(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: const [
             CafeHeroHeader(
-              title: 'Cafe corner',
-              subtitle: 'Notifications, support, profile, and directions.',
+              title: AppStrings.moreHeroTitle,
+              subtitle: AppStrings.moreHeroSubtitle,
               icon: Icons.more_horiz,
             ),
             _MoreItem(
                 icon: Icons.notifications_outlined,
-                title: 'Notifications',
-                subtitle: 'Cafe updates and order notes',
+                title: AppStrings.notificationsTitle,
+                subtitle: AppStrings.notificationsMenuSubtitle,
                 screen: NotificationsScreen()),
             _MoreItem(
                 icon: Icons.map_outlined,
-                title: 'Store Location',
-                subtitle: 'Find your way to the cafe',
+                title: AppStrings.storeLocationTitle,
+                subtitle: AppStrings.storeLocationMenuSubtitle,
                 screen: StoreLocationScreen()),
             _MoreItem(
                 icon: Icons.chat_outlined,
-                title: 'Chat',
-                subtitle: 'Ask about hours, reservations, and best sellers',
+                title: AppStrings.chatTitle,
+                subtitle: AppStrings.chatMenuSubtitle,
                 screen: ChatScreen()),
             _MoreItem(
                 icon: Icons.person_outline,
-                title: 'Profile',
-                subtitle: 'Account details and logout',
+                title: AppStrings.profileTitle,
+                subtitle: AppStrings.profileMenuSubtitle,
                 screen: ProfileScreen()),
           ],
         ),
