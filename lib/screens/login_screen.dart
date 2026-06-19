@@ -54,121 +54,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 padding: const EdgeInsets.fromLTRB(22, 42, 22, 24),
                 children: [
                   const SizedBox(height: 10),
-                  const Center(child: CafeBrandLogo()),
-                  const SizedBox(height: 10),
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: .62),
-                        borderRadius: BorderRadius.circular(999),
-                        border:
-                            Border.all(color: loafOrange.withValues(alpha: .2)),
-                      ),
-                      child: Text(
-                        'Cat Cafe & Good Bites',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              color: loafBrown,
-                              fontWeight: FontWeight.w800,
-                            ),
-                      ),
-                    ),
-                  ),
+                  const _LoginHeader(),
                   const SizedBox(height: 18),
-                  CafeCard(
-                    padding: const EdgeInsets.fromLTRB(18, 20, 18, 24),
-                    child: Form(
-                      key: formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          CafeTextFormField(
-                            controller: loginController,
-                            labelText: AppStrings.loginIdentityLabel,
-                            hintText: AppStrings.loginIdentityHint,
-                            prefixIcon: const Icon(Icons.mail_outline),
-                            textInputAction: TextInputAction.next,
-                            autofillHints: const [
-                              AutofillHints.username,
-                              AutofillHints.email,
-                              AutofillHints.telephoneNumber,
-                            ],
-                            validator: CafeValidators.loginIdentity,
-                          ),
-                          const SizedBox(height: 16),
-                          CafeTextFormField(
-                            controller: passwordController,
-                            labelText: AppStrings.passwordLabel,
-                            hintText: AppStrings.passwordHint,
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            textInputAction: TextInputAction.done,
-                            autofillHints: const [AutofillHints.password],
-                            validator: CafeValidators.password,
-                            obscureText: obscurePassword,
-                            suffixIcon: IconButton(
-                              onPressed: () => setState(
-                                  () => obscurePassword = !obscurePassword),
-                              icon: Icon(obscurePassword
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined),
-                            ),
-                            onFieldSubmitted: (_) => _submit(auth),
-                          ),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: TextButton(
-                              onPressed: () {},
-                              child: const Text(AppStrings.forgotPassword),
-                            ),
-                          ),
-                          if (auth.error != null)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: Text(auth.error!,
-                                  style: TextStyle(
-                                      color:
-                                  Theme.of(context).colorScheme.error)),
-                            ),
-                          FilledButton.icon(
-                            onPressed: auth.isLoading ? null : () => _submit(auth),
-                            icon: auth.isLoading
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2),
-                                  )
-                                : const Icon(Icons.pets),
-                            label: const Text(AppStrings.signInButton),
-                          ),
-                          const SizedBox(height: 18),
-                          Row(
-                            children: [
-                              const Expanded(child: Divider()),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 14),
-                                child: Text('or',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(color: loafMuted)),
-                              ),
-                              const Expanded(child: Divider()),
-                            ],
-                          ),
-                          const SizedBox(height: 18),
-                          OutlinedButton.icon(
-                            onPressed: () =>
-                                Navigator.pushNamed(context, AppRoutes.register),
-                            icon: const Icon(Icons.person_add_alt_1),
-                            label: const Text(AppStrings.createAccountButton),
-                          ),
-                        ],
-                      ),
-                    ),
+                  _LoginFormCard(
+                    formKey: formKey,
+                    auth: auth,
+                    loginController: loginController,
+                    passwordController: passwordController,
+                    obscurePassword: obscurePassword,
+                    onTogglePassword: () =>
+                        setState(() => obscurePassword = !obscurePassword),
+                    onSubmit: () => _submit(auth),
                   ),
                   const SizedBox(height: 34),
                   Text(
@@ -201,6 +97,153 @@ class _LoginScreenState extends State<LoginScreen> {
     if (ok) {
       Navigator.pushReplacementNamed(context, AppRoutes.home);
     }
+  }
+}
+
+class _LoginHeader extends StatelessWidget {
+  const _LoginHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const Center(child: CafeBrandLogo()),
+        const SizedBox(height: 10),
+        Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: .62),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: loafOrange.withValues(alpha: .2)),
+            ),
+            child: Text(
+              'Cat Cafe & Good Bites',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: loafBrown,
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LoginFormCard extends StatelessWidget {
+  const _LoginFormCard({
+    required this.formKey,
+    required this.auth,
+    required this.loginController,
+    required this.passwordController,
+    required this.obscurePassword,
+    required this.onTogglePassword,
+    required this.onSubmit,
+  });
+
+  final GlobalKey<FormState> formKey;
+  final AuthProvider auth;
+  final TextEditingController loginController;
+  final TextEditingController passwordController;
+  final bool obscurePassword;
+  final VoidCallback onTogglePassword;
+  final VoidCallback onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    return CafeCard(
+      padding: const EdgeInsets.fromLTRB(18, 20, 18, 24),
+      child: Form(
+        key: formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            CafeTextFormField(
+              controller: loginController,
+              labelText: AppStrings.loginIdentityLabel,
+              hintText: AppStrings.loginIdentityHint,
+              prefixIcon: const Icon(Icons.mail_outline),
+              textInputAction: TextInputAction.next,
+              autofillHints: const [
+                AutofillHints.username,
+                AutofillHints.email,
+                AutofillHints.telephoneNumber,
+              ],
+              validator: CafeValidators.loginIdentity,
+            ),
+            const SizedBox(height: 16),
+            CafeTextFormField(
+              controller: passwordController,
+              labelText: AppStrings.passwordLabel,
+              hintText: AppStrings.passwordHint,
+              prefixIcon: const Icon(Icons.lock_outline),
+              textInputAction: TextInputAction.done,
+              autofillHints: const [AutofillHints.password],
+              validator: CafeValidators.password,
+              obscureText: obscurePassword,
+              suffixIcon: IconButton(
+                onPressed: onTogglePassword,
+                icon: Icon(obscurePassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined),
+              ),
+              onFieldSubmitted: (_) => onSubmit(),
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: () {},
+                child: const Text(AppStrings.forgotPassword),
+              ),
+            ),
+            if (auth.error != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  auth.error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            FilledButton.icon(
+              onPressed: auth.isLoading ? null : onSubmit,
+              icon: auth.isLoading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.pets),
+              label: const Text(AppStrings.signInButton),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                const Expanded(child: Divider()),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  child: Text(
+                    'or',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: loafMuted),
+                  ),
+                ),
+                const Expanded(child: Divider()),
+              ],
+            ),
+            const SizedBox(height: 18),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.pushNamed(context, AppRoutes.register),
+              icon: const Icon(Icons.person_add_alt_1),
+              label: const Text(AppStrings.createAccountButton),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

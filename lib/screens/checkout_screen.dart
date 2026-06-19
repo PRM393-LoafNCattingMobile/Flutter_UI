@@ -104,108 +104,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     subtitle: AppStrings.checkoutHeroSubtitle,
                     icon: Icons.receipt_long,
                   ),
-                  CafeCard(
-                    child: Column(
-                      children: [
-                        ...cart.items.map(
-                          (item) => Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                    child: Text(item.product.name,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleSmall)),
-                                Text('x${item.quantity}',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(color: loafMuted)),
-                                const SizedBox(width: 12),
-                                Text(money(item.subtotal),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleSmall
-                                        ?.copyWith(color: loafOrange)),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const Divider(),
-                        Row(
-                          children: [
-                            Text(AppStrings.totalLabel,
-                                style: Theme.of(context).textTheme.titleMedium),
-                            const Spacer(),
-                            Text(money(cart.total),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
-                                    ?.copyWith(color: loafOrange)),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                  _CheckoutSummaryCard(cart: cart),
                   const SizedBox(height: 14),
-                  CafeCard(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        CafeTextFormField(
-                          controller: nameController,
-                          labelText: AppStrings.receiverNameLabel,
-                          prefixIcon: const Icon(Icons.person_outline),
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.name],
-                          validator: (value) => CafeValidators.name(
-                            value,
-                            fieldName: AppStrings.receiverNameFieldName,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        CafeTextFormField(
-                          controller: phoneController,
-                          labelText: AppStrings.phoneNumberLabel,
-                          prefixIcon: const Icon(Icons.phone_outlined),
-                          keyboardType: TextInputType.phone,
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.telephoneNumber],
-                          validator: CafeValidators.phone,
-                        ),
-                        const SizedBox(height: 12),
-                        CafeTextFormField(
-                          controller: noteController,
-                          labelText: AppStrings.orderNoteLabel,
-                          hintText: AppStrings.orderNoteHint,
-                          prefixIcon: const Icon(Icons.edit_note),
-                          textInputAction: TextInputAction.newline,
-                          maxLines: 3,
-                        ),
-                        const SizedBox(height: 12),
-                        DropdownButtonFormField<String>(
-                          initialValue: paymentMethod,
-                          decoration: const InputDecoration(
-                              labelText: AppStrings.paymentMethodLabel,
-                              prefixIcon: Icon(Icons.payments_outlined)),
-                          items: const [
-                            AppStrings.cashPaymentMethod,
-                            AppStrings.creditCardPaymentMethod,
-                            AppStrings.eWalletPaymentMethod,
-                            AppStrings.bankTransferPaymentMethod,
-                          ]
-                              .map((item) =>
-                                  DropdownMenuItem(value: item, child: Text(item)))
-                              .toList(),
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() => paymentMethod = value);
-                            }
-                          },
-                        ),
-                      ],
-                    ),
+                  _CheckoutFormCard(
+                    nameController: nameController,
+                    phoneController: phoneController,
+                    noteController: noteController,
+                    paymentMethod: paymentMethod,
+                    onPaymentMethodChanged: (value) {
+                      if (value != null) {
+                        setState(() => paymentMethod = value);
+                      }
+                    },
                   ),
                   if (error != null)
                     Padding(
@@ -285,5 +195,144 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         setState(() => placing = false);
       }
     }
+  }
+}
+
+class _CheckoutSummaryCard extends StatelessWidget {
+  const _CheckoutSummaryCard({required this.cart});
+
+  final CartProvider cart;
+
+  @override
+  Widget build(BuildContext context) {
+    return CafeCard(
+      child: Column(
+        children: [
+          ...cart.items.map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      item.product.name,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                  ),
+                  Text(
+                    'x${item.quantity}',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: loafMuted),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    money(item.subtotal),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(color: loafOrange),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const Divider(),
+          Row(
+            children: [
+              Text(
+                AppStrings.totalLabel,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const Spacer(),
+              Text(
+                money(cart.total),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(color: loafOrange),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CheckoutFormCard extends StatelessWidget {
+  const _CheckoutFormCard({
+    required this.nameController,
+    required this.phoneController,
+    required this.noteController,
+    required this.paymentMethod,
+    required this.onPaymentMethodChanged,
+  });
+
+  final TextEditingController nameController;
+  final TextEditingController phoneController;
+  final TextEditingController noteController;
+  final String paymentMethod;
+  final ValueChanged<String?> onPaymentMethodChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return CafeCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          CafeTextFormField(
+            controller: nameController,
+            labelText: AppStrings.receiverNameLabel,
+            prefixIcon: const Icon(Icons.person_outline),
+            textInputAction: TextInputAction.next,
+            autofillHints: const [AutofillHints.name],
+            validator: (value) => CafeValidators.name(
+              value,
+              fieldName: AppStrings.receiverNameFieldName,
+            ),
+          ),
+          const SizedBox(height: 12),
+          CafeTextFormField(
+            controller: phoneController,
+            labelText: AppStrings.phoneNumberLabel,
+            prefixIcon: const Icon(Icons.phone_outlined),
+            keyboardType: TextInputType.phone,
+            textInputAction: TextInputAction.next,
+            autofillHints: const [AutofillHints.telephoneNumber],
+            validator: CafeValidators.phone,
+          ),
+          const SizedBox(height: 12),
+          CafeTextFormField(
+            controller: noteController,
+            labelText: AppStrings.orderNoteLabel,
+            hintText: AppStrings.orderNoteHint,
+            prefixIcon: const Icon(Icons.edit_note),
+            textInputAction: TextInputAction.newline,
+            maxLines: 3,
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            initialValue: paymentMethod,
+            decoration: const InputDecoration(
+              labelText: AppStrings.paymentMethodLabel,
+              prefixIcon: Icon(Icons.payments_outlined),
+            ),
+            items: const [
+              AppStrings.cashPaymentMethod,
+              AppStrings.creditCardPaymentMethod,
+              AppStrings.eWalletPaymentMethod,
+              AppStrings.bankTransferPaymentMethod,
+            ]
+                .map(
+                  (item) => DropdownMenuItem(value: item, child: Text(item)),
+                )
+                .toList(),
+            onChanged: onPaymentMethodChanged,
+          ),
+        ],
+      ),
+    );
   }
 }

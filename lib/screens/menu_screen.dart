@@ -42,45 +42,9 @@ class _MenuScreenState extends State<MenuScreen> {
         child: Column(
           children: [
             const _MenuHeader(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-              child: Row(
-                children: [
-                  Expanded(
-                      child: TextField(
-                      controller: searchController,
-                      decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.search),
-                        hintText: AppStrings.menuSearchHint,
-                      ),
-                      onSubmitted: (value) =>
-                          catalog.applyFilter(keyword: value),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: loafBorder),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x14D2691E),
-                          blurRadius: 14,
-                          offset: Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: IconButton(
-                      onPressed: () =>
-                          catalog.applyFilter(keyword: searchController.text),
-                      icon: const Icon(Icons.tune),
-                    ),
-                  ),
-                ],
-              ),
+            _MenuSearchBar(
+              searchController: searchController,
+              onApplyFilter: (value) => catalog.applyFilter(keyword: value),
             ),
             SizedBox(
               height: 54,
@@ -131,12 +95,65 @@ class _MenuScreenState extends State<MenuScreen> {
                               itemCount: catalog.products.length,
                               separatorBuilder: (_, __) =>
                                   const SizedBox(height: 12),
-                              itemBuilder: (_, index) =>
-                                  ProductTile(product: catalog.products[index]),
+                              itemBuilder: (_, index) => _MenuProductCard(
+                                product: catalog.products[index],
+                              ),
                             ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _MenuSearchBar extends StatelessWidget {
+  const _MenuSearchBar({
+    required this.searchController,
+    required this.onApplyFilter,
+  });
+
+  final TextEditingController searchController;
+  final ValueChanged<String> onApplyFilter;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: searchController,
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.search),
+                hintText: AppStrings.menuSearchHint,
+              ),
+              onSubmitted: onApplyFilter,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: loafBorder),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x14D2691E),
+                  blurRadius: 14,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: IconButton(
+              onPressed: () => onApplyFilter(searchController.text),
+              icon: const Icon(Icons.tune),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -229,8 +246,8 @@ class _MenuHeader extends StatelessWidget {
   }
 }
 
-class ProductTile extends StatelessWidget {
-  const ProductTile({super.key, required this.product});
+class _MenuProductCard extends StatelessWidget {
+  const _MenuProductCard({required this.product});
   final Product product;
 
   @override

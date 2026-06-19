@@ -41,98 +41,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
-            const SizedBox(height: 14),
-            const Center(
-              child: CafeBrandLogo(width: 196, height: 150),
-            ),
-            const SizedBox(height: 16),
-            const CafeHeroHeader(
-              title: 'Join the cafe',
-              subtitle: 'Order faster, reserve cozy tables, and meet the cats.',
-              icon: Icons.pets,
-            ),
-            CafeCard(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: formKey,
-                child: Column(
-                  children: [
-                    CafeTextFormField(
-                      controller: nameController,
-                      labelText: 'Name',
-                      prefixIcon: const Icon(Icons.person_outline),
-                      textInputAction: TextInputAction.next,
-                      autofillHints: const [AutofillHints.name],
-                      validator: (value) => CafeValidators.name(value),
-                    ),
-                    const SizedBox(height: 12),
-                    CafeTextFormField(
-                      controller: emailController,
-                      labelText: 'Email',
-                      prefixIcon: const Icon(Icons.mail_outline),
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      autofillHints: const [AutofillHints.email],
-                      validator: CafeValidators.email,
-                    ),
-                    const SizedBox(height: 12),
-                    CafeTextFormField(
-                      controller: phoneController,
-                      labelText: 'Phone number',
-                      prefixIcon: const Icon(Icons.phone_outlined),
-                      keyboardType: TextInputType.phone,
-                      textInputAction: TextInputAction.next,
-                      autofillHints: const [AutofillHints.telephoneNumber],
-                      validator: CafeValidators.phone,
-                    ),
-                    const SizedBox(height: 12),
-                    CafeTextFormField(
-                      controller: passwordController,
-                      labelText: 'Password',
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      textInputAction: TextInputAction.done,
-                      autofillHints: const [AutofillHints.newPassword],
-                      validator: CafeValidators.password,
-                      obscureText: obscurePassword,
-                      suffixIcon: IconButton(
-                        onPressed: () => setState(
-                            () => obscurePassword = !obscurePassword),
-                        icon: Icon(obscurePassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined),
-                      ),
-                      onFieldSubmitted: (_) => _submit(auth),
-                    ),
-                    if (auth.error != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Text(auth.error!,
-                            style: TextStyle(
-                                color: Theme.of(context).colorScheme.error)),
-                      ),
-                    const SizedBox(height: 18),
-                    FilledButton.icon(
-                      onPressed: auth.isLoading ? null : () => _submit(auth),
-                      icon: auth.isLoading
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.favorite_outline),
-                      label: const Text(AppStrings.registerButton),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Your cafe profile keeps orders and reservations together.',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: loafMuted),
-                    ),
-                  ],
-                ),
-              ),
+            const _RegisterHeader(),
+            _RegisterFormCard(
+              formKey: formKey,
+              auth: auth,
+              nameController: nameController,
+              emailController: emailController,
+              phoneController: phoneController,
+              passwordController: passwordController,
+              obscurePassword: obscurePassword,
+              onTogglePassword: () =>
+                  setState(() => obscurePassword = !obscurePassword),
+              onSubmit: () => _submit(auth),
             ),
           ],
         ),
@@ -158,5 +78,139 @@ class _RegisterScreenState extends State<RegisterScreen> {
         (_) => false,
       );
     }
+  }
+}
+
+class _RegisterHeader extends StatelessWidget {
+  const _RegisterHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      children: [
+        SizedBox(height: 14),
+        Center(
+          child: CafeBrandLogo(width: 196, height: 150),
+        ),
+        SizedBox(height: 16),
+        CafeHeroHeader(
+          title: 'Join the cafe',
+          subtitle: 'Order faster, reserve cozy tables, and meet the cats.',
+          icon: Icons.pets,
+        ),
+      ],
+    );
+  }
+}
+
+class _RegisterFormCard extends StatelessWidget {
+  const _RegisterFormCard({
+    required this.formKey,
+    required this.auth,
+    required this.nameController,
+    required this.emailController,
+    required this.phoneController,
+    required this.passwordController,
+    required this.obscurePassword,
+    required this.onTogglePassword,
+    required this.onSubmit,
+  });
+
+  final GlobalKey<FormState> formKey;
+  final AuthProvider auth;
+  final TextEditingController nameController;
+  final TextEditingController emailController;
+  final TextEditingController phoneController;
+  final TextEditingController passwordController;
+  final bool obscurePassword;
+  final VoidCallback onTogglePassword;
+  final VoidCallback onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    return CafeCard(
+      padding: const EdgeInsets.all(16),
+      child: Form(
+        key: formKey,
+        child: Column(
+          children: [
+            CafeTextFormField(
+              controller: nameController,
+              labelText: 'Name',
+              prefixIcon: const Icon(Icons.person_outline),
+              textInputAction: TextInputAction.next,
+              autofillHints: const [AutofillHints.name],
+              validator: (value) => CafeValidators.name(value),
+            ),
+            const SizedBox(height: 12),
+            CafeTextFormField(
+              controller: emailController,
+              labelText: 'Email',
+              prefixIcon: const Icon(Icons.mail_outline),
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              autofillHints: const [AutofillHints.email],
+              validator: CafeValidators.email,
+            ),
+            const SizedBox(height: 12),
+            CafeTextFormField(
+              controller: phoneController,
+              labelText: 'Phone number',
+              prefixIcon: const Icon(Icons.phone_outlined),
+              keyboardType: TextInputType.phone,
+              textInputAction: TextInputAction.next,
+              autofillHints: const [AutofillHints.telephoneNumber],
+              validator: CafeValidators.phone,
+            ),
+            const SizedBox(height: 12),
+            CafeTextFormField(
+              controller: passwordController,
+              labelText: 'Password',
+              prefixIcon: const Icon(Icons.lock_outline),
+              textInputAction: TextInputAction.done,
+              autofillHints: const [AutofillHints.newPassword],
+              validator: CafeValidators.password,
+              obscureText: obscurePassword,
+              suffixIcon: IconButton(
+                onPressed: onTogglePassword,
+                icon: Icon(obscurePassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined),
+              ),
+              onFieldSubmitted: (_) => onSubmit(),
+            ),
+            if (auth.error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(
+                  auth.error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            const SizedBox(height: 18),
+            FilledButton.icon(
+              onPressed: auth.isLoading ? null : onSubmit,
+              icon: auth.isLoading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.favorite_outline),
+              label: const Text(AppStrings.registerButton),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Your cafe profile keeps orders and reservations together.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: loafMuted),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
