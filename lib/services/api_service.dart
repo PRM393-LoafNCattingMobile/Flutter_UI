@@ -137,8 +137,22 @@ class ApiService {
     return data.map((item) => Reservation.fromJson(item)).toList();
   }
 
-  Future<void> createOrder(Map<String, dynamic> body) async {
-    await _post('/orders', body);
+  /// Trả về OrderDto vừa tạo (cần orderId để tạo link thanh toán PayOS).
+  Future<Map<String, dynamic>> createOrder(Map<String, dynamic> body) async {
+    final data = await _post('/orders', body);
+    return data as Map<String, dynamic>;
+  }
+
+  /// Tạo link/QR thanh toán PayOS cho đơn đang chờ thanh toán.
+  Future<Map<String, dynamic>> createPaymentLink(int orderId) async {
+    final data = await _post('/payments/create-link', {'orderId': orderId});
+    return data as Map<String, dynamic>;
+  }
+
+  /// Poll trạng thái thanh toán của đơn (isPaid == true khi PayOS báo đã trả).
+  Future<Map<String, dynamic>> getPaymentStatus(int orderId) async {
+    final data = await _get('/payments/status/$orderId');
+    return data as Map<String, dynamic>;
   }
 
   Future<List<AppNotification>> getNotifications(int userId) async {
