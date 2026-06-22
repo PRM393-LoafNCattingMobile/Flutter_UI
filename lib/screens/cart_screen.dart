@@ -63,17 +63,17 @@ class CartScreen extends StatelessWidget {
                               ),
                             ),
                             IconButton(
-                                onPressed: () => cart.update(
-                                    item.product, item.quantity - 1),
+                                onPressed: () =>
+                                    cart.updateItem(item, item.quantity - 1),
                                 icon: const Icon(Icons.remove)),
                             Text('${item.quantity}',
                                 style: Theme.of(context).textTheme.titleMedium),
                             IconButton(
-                                onPressed:
-                                    item.quantity < item.product.unitInStock
-                                        ? () => cart.update(
-                                            item.product, item.quantity + 1)
-                                        : null,
+                                onPressed: item.quantity <
+                                        item.product.unitInStock
+                                    ? () =>
+                                        cart.updateItem(item, item.quantity + 1)
+                                    : null,
                                 icon: const Icon(Icons.add)),
                           ],
                         ),

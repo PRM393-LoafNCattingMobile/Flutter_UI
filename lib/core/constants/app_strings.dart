@@ -138,6 +138,8 @@ class AppStrings {
   static const cartStockLimitReachedMessage =
       'Giỏ hàng đã đạt giới hạn tồn kho cho món này.';
   static const addToCartButton = 'Thêm vào giỏ';
+  static const perfectWithTitle = 'Perfect with';
+  static const similarItemsTitle = 'Similar items';
   static const retryButton = 'Thử lại';
   static const unknownBreed = 'Chưa rõ giống';
 

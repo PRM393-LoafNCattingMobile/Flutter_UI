@@ -80,24 +80,166 @@ class AuthProvider extends LoadableProvider {
   }
 }
 
+enum ProductAvailabilityFilter { all, availableOnly }
+
+enum ProductPriceRange { all, under50k, from50kTo100k, over100k }
+
+enum ProductSortOption { defaultOrder, nameAZ, priceLowHigh, priceHighLow }
+
 class CatalogProvider extends LoadableProvider {
-  CatalogProvider(this.api);
+  CatalogProvider(this.api, {List<Product>? initialProducts})
+      : _products = List<Product>.from(initialProducts ?? const []),
+        _allProducts = List<Product>.from(initialProducts ?? const []);
+
   final ApiService api;
   List<Category> categories = [];
-  List<Product> products = [];
+  List<Product> _products;
+  List<Product> _allProducts;
   int? selectedCategoryId;
   String search = '';
+  ProductAvailabilityFilter availabilityFilter = ProductAvailabilityFilter.all;
+  ProductPriceRange priceRange = ProductPriceRange.all;
+  ProductSortOption sortOption = ProductSortOption.defaultOrder;
+  bool discountedOnly = false;
+
+  List<Product> get allProducts => List.unmodifiable(_allProducts);
+
+  List<Product> get products {
+    Iterable<Product> filtered = _products;
+
+    if (availabilityFilter == ProductAvailabilityFilter.availableOnly) {
+      filtered = filtered
+          .where((product) => product.isAvailable && product.unitInStock > 0);
+    }
+
+    filtered = filtered.where((product) {
+      final price = product.displayPrice;
+      return switch (priceRange) {
+        ProductPriceRange.all => true,
+        ProductPriceRange.under50k => price < 50000,
+        ProductPriceRange.from50kTo100k => price >= 50000 && price <= 100000,
+        ProductPriceRange.over100k => price > 100000,
+      };
+    });
+
+    if (discountedOnly) {
+      filtered = filtered.where((product) => product.discountPrice != null);
+    }
+
+    final items = filtered.toList();
+    switch (sortOption) {
+      case ProductSortOption.defaultOrder:
+        break;
+      case ProductSortOption.nameAZ:
+        items.sort((a, b) => a.name.compareTo(b.name));
+        break;
+      case ProductSortOption.priceLowHigh:
+        items.sort((a, b) => a.displayPrice.compareTo(b.displayPrice));
+        break;
+      case ProductSortOption.priceHighLow:
+        items.sort((a, b) => b.displayPrice.compareTo(a.displayPrice));
+        break;
+    }
+    return items;
+  }
+
+  bool get hasMenuFilters =>
+      availabilityFilter != ProductAvailabilityFilter.all ||
+      priceRange != ProductPriceRange.all ||
+      sortOption != ProductSortOption.defaultOrder ||
+      discountedOnly;
+
+  List<String> get activeFilterLabels {
+    final labels = <String>[];
+    if (availabilityFilter == ProductAvailabilityFilter.availableOnly) {
+      labels.add('Còn hàng');
+    }
+    switch (priceRange) {
+      case ProductPriceRange.all:
+        break;
+      case ProductPriceRange.under50k:
+        labels.add('< 50k');
+        break;
+      case ProductPriceRange.from50kTo100k:
+        labels.add('50k-100k');
+        break;
+      case ProductPriceRange.over100k:
+        labels.add('> 100k');
+        break;
+    }
+    switch (sortOption) {
+      case ProductSortOption.defaultOrder:
+        break;
+      case ProductSortOption.nameAZ:
+        labels.add('Tên A-Z');
+        break;
+      case ProductSortOption.priceLowHigh:
+        labels.add('Giá thấp-cao');
+        break;
+      case ProductSortOption.priceHighLow:
+        labels.add('Giá cao-thấp');
+        break;
+    }
+    if (discountedOnly) {
+      labels.add('Giảm giá');
+    }
+    return labels;
+  }
 
   Future<void> load() async => run(() async {
         categories = await api.getCategories();
-        products = await api.getProducts(
+        _products = await api.getProducts(
             categoryId: selectedCategoryId, search: search);
+        if (selectedCategoryId == null && search.trim().isEmpty) {
+          _allProducts = List<Product>.from(_products);
+        }
       });
 
   Future<void> applyFilter({int? categoryId, String? keyword}) async {
     selectedCategoryId = categoryId;
     search = keyword ?? search;
     await load();
+  }
+
+  void applyMenuFilters({
+    required ProductAvailabilityFilter availability,
+    required ProductPriceRange priceRange,
+    required ProductSortOption sortOption,
+    required bool discountedOnly,
+  }) {
+    availabilityFilter = availability;
+    this.priceRange = priceRange;
+    this.sortOption = sortOption;
+    this.discountedOnly = discountedOnly;
+    notifyListeners();
+  }
+
+  void resetMenuFilters() {
+    availabilityFilter = ProductAvailabilityFilter.all;
+    priceRange = ProductPriceRange.all;
+    sortOption = ProductSortOption.defaultOrder;
+    discountedOnly = false;
+    notifyListeners();
+  }
+
+  void clearAvailabilityFilter() {
+    availabilityFilter = ProductAvailabilityFilter.all;
+    notifyListeners();
+  }
+
+  void clearPriceRangeFilter() {
+    priceRange = ProductPriceRange.all;
+    notifyListeners();
+  }
+
+  void clearSortFilter() {
+    sortOption = ProductSortOption.defaultOrder;
+    notifyListeners();
+  }
+
+  void clearDiscountFilter() {
+    discountedOnly = false;
+    notifyListeners();
   }
 }
 
@@ -111,8 +253,9 @@ class CartProvider extends ChangeNotifier {
     if (!product.isAvailable || product.unitInStock <= 0 || quantity <= 0) {
       return 0;
     }
-    final index =
-        items.indexWhere((item) => item.product.productId == product.productId);
+    final index = items.indexWhere(
+      (item) => item.product.productId == product.productId,
+    );
     final currentQuantity = index >= 0 ? items[index].quantity : 0;
     final nextQuantity =
         math.min(currentQuantity + quantity, product.unitInStock);
@@ -133,7 +276,20 @@ class CartProvider extends ChangeNotifier {
     final index =
         items.indexWhere((item) => item.product.productId == product.productId);
     if (index < 0) return;
-    final nextQuantity = math.min(quantity, product.unitInStock);
+    updateItem(items[index], quantity);
+  }
+
+  void updateItem(CartItem item, int quantity) {
+    final index = items.indexOf(item);
+    if (index < 0) return;
+
+    final productId = item.product.productId;
+    final otherQuantity = items
+        .where((cartItem) => cartItem.product.productId == productId)
+        .where((cartItem) => cartItem != item)
+        .fold(0, (sum, cartItem) => sum + cartItem.quantity);
+    final maxQuantity = item.product.unitInStock - otherQuantity;
+    final nextQuantity = math.min(quantity, maxQuantity);
     if (nextQuantity <= 0) {
       items.removeAt(index);
     } else {
