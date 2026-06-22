@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
+import 'package:flutter/services.dart';
 import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/screens/cart_screen.dart';
@@ -44,7 +45,10 @@ class _MenuScreenState extends State<MenuScreen> {
             const _MenuHeader(),
             _MenuSearchBar(
               searchController: searchController,
-              onApplyFilter: (value) => catalog.applyFilter(keyword: value),
+              hasMenuFilters: catalog.hasMenuFilters,
+              onApplyFilter: (value) =>
+                  catalog.applyFilter(keyword: value.trim()),
+              onOpenFilters: () => _showMenuFilters(context, catalog),
             ),
             SizedBox(
               height: 54,
@@ -75,6 +79,7 @@ class _MenuScreenState extends State<MenuScreen> {
                 ],
               ),
             ),
+            if (catalog.hasMenuFilters) _ActiveMenuFilters(catalog: catalog),
             CafeSectionTitle(
               title: AppStrings.popularPicksTitle,
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
@@ -107,14 +112,493 @@ class _MenuScreenState extends State<MenuScreen> {
   }
 }
 
-class _MenuSearchBar extends StatelessWidget {
+String? _telexToneKeyFor(LogicalKeyboardKey key) {
+  return switch (key) {
+    LogicalKeyboardKey.keyS => 's',
+    LogicalKeyboardKey.keyF => 'f',
+    LogicalKeyboardKey.keyR => 'r',
+    LogicalKeyboardKey.keyX => 'x',
+    LogicalKeyboardKey.keyJ => 'j',
+    _ => null,
+  };
+}
+
+String? _repairBrokenUniKeyTelexTone({
+  required String previousText,
+  required String incomingText,
+  required String? toneKey,
+}) {
+  if (toneKey == null || previousText.isEmpty || incomingText.isEmpty) {
+    return null;
+  }
+
+  final tone = _telexToneIndexes[toneKey];
+  if (tone == null) return null;
+
+  final targetIndex = _findToneTargetIndex(previousText);
+  if (targetIndex == null) return null;
+
+  final target = previousText[targetIndex];
+  final tonedTarget = _withTone(target, tone);
+  if (tonedTarget == target) return null;
+
+  final deletedTargetText = previousText.substring(0, targetIndex) +
+      previousText.substring(targetIndex + 1);
+  if (incomingText != deletedTargetText) return null;
+
+  return previousText.substring(0, targetIndex) +
+      tonedTarget +
+      previousText.substring(targetIndex + 1);
+}
+
+bool _isLostTelexToneTargetUpdate(
+  TextEditingValue oldValue,
+  TextEditingValue newValue,
+) {
+  if (!oldValue.selection.isCollapsed ||
+      oldValue.selection.baseOffset != oldValue.text.length ||
+      !newValue.selection.isCollapsed ||
+      newValue.selection.baseOffset != newValue.text.length) {
+    return false;
+  }
+
+  final targetIndex = _findToneTargetIndex(oldValue.text);
+  if (targetIndex == null) return false;
+
+  final deletedTargetText = oldValue.text.substring(0, targetIndex) +
+      oldValue.text.substring(targetIndex + 1);
+  return newValue.text == deletedTargetText;
+}
+
+const _telexToneIndexes = {
+  's': 1,
+  'f': 2,
+  'r': 3,
+  'x': 4,
+  'j': 5,
+};
+
+const _vowelToneVariants = <String, List<String>>{
+  'a': ['a', '\u00e1', '\u00e0', '\u1ea3', '\u00e3', '\u1ea1'],
+  '\u0103': ['\u0103', '\u1eaf', '\u1eb1', '\u1eb3', '\u1eb5', '\u1eb7'],
+  '\u00e2': ['\u00e2', '\u1ea5', '\u1ea7', '\u1ea9', '\u1eab', '\u1ead'],
+  'e': ['e', '\u00e9', '\u00e8', '\u1ebb', '\u1ebd', '\u1eb9'],
+  '\u00ea': ['\u00ea', '\u1ebf', '\u1ec1', '\u1ec3', '\u1ec5', '\u1ec7'],
+  'i': ['i', '\u00ed', '\u00ec', '\u1ec9', '\u0129', '\u1ecb'],
+  'o': ['o', '\u00f3', '\u00f2', '\u1ecf', '\u00f5', '\u1ecd'],
+  '\u00f4': ['\u00f4', '\u1ed1', '\u1ed3', '\u1ed5', '\u1ed7', '\u1ed9'],
+  '\u01a1': ['\u01a1', '\u1edb', '\u1edd', '\u1edf', '\u1ee1', '\u1ee3'],
+  'u': ['u', '\u00fa', '\u00f9', '\u1ee7', '\u0169', '\u1ee5'],
+  '\u01b0': ['\u01b0', '\u1ee9', '\u1eeb', '\u1eed', '\u1eef', '\u1ef1'],
+  'y': ['y', '\u00fd', '\u1ef3', '\u1ef7', '\u1ef9', '\u1ef5'],
+};
+
+final _asciiLetterPattern = RegExp(r'[A-Za-z]');
+
+int? _findToneTargetIndex(String text) {
+  var end = text.length - 1;
+  while (end >= 0 && !_isVietnameseWordCharacter(text[end])) {
+    end--;
+  }
+  if (end < 0) return null;
+
+  var start = end;
+  while (start >= 0 && _isVietnameseWordCharacter(text[start])) {
+    start--;
+  }
+  start++;
+
+  final vowelIndexes = <int>[];
+  for (var index = start; index <= end; index++) {
+    if (_baseVowelKey(text[index]) != null) {
+      vowelIndexes.add(index);
+    }
+  }
+  if (vowelIndexes.isEmpty) return null;
+
+  for (final index in vowelIndexes.reversed) {
+    final key = _baseVowelKey(text[index]);
+    if (key == '\u0103' ||
+        key == '\u00e2' ||
+        key == '\u00ea' ||
+        key == '\u00f4' ||
+        key == '\u01a1' ||
+        key == '\u01b0') {
+      return index;
+    }
+  }
+
+  if (end > start && text.substring(end - 1, end + 1).toLowerCase() == 'ao') {
+    return end - 1;
+  }
+
+  return vowelIndexes.last;
+}
+
+bool _isVietnameseWordCharacter(String value) {
+  return _asciiLetterPattern.hasMatch(value) ||
+      _baseVowelKey(value) != null ||
+      value == '\u0111' ||
+      value == '\u0110';
+}
+
+String? _baseVowelKey(String value) {
+  final lower = value.toLowerCase();
+  for (final entry in _vowelToneVariants.entries) {
+    if (entry.value.contains(lower)) {
+      return entry.key;
+    }
+  }
+  return null;
+}
+
+String _withTone(String value, int tone) {
+  final lower = value.toLowerCase();
+  for (final variants in _vowelToneVariants.values) {
+    if (variants.contains(lower)) {
+      final toned = variants[tone];
+      return value == lower ? toned : toned.toUpperCase();
+    }
+  }
+  return value;
+}
+
+Future<void> _showMenuFilters(
+    BuildContext context, CatalogProvider catalog) async {
+  await showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (_) => _MenuFilterSheet(catalog: catalog),
+  );
+}
+
+class _ActiveMenuFilters extends StatelessWidget {
+  const _ActiveMenuFilters({required this.catalog});
+
+  final CatalogProvider catalog;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 42,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        children: [
+          if (catalog.availabilityFilter ==
+              ProductAvailabilityFilter.availableOnly)
+            _ActiveFilterChip(
+              label: 'C\u00f2n h\u00e0ng',
+              onDeleted: catalog.clearAvailabilityFilter,
+            ),
+          if (catalog.priceRange != ProductPriceRange.all)
+            _ActiveFilterChip(
+              label: _priceRangeLabel(catalog.priceRange),
+              onDeleted: catalog.clearPriceRangeFilter,
+            ),
+          if (catalog.sortOption != ProductSortOption.defaultOrder)
+            _ActiveFilterChip(
+              label: _sortOptionLabel(catalog.sortOption),
+              onDeleted: catalog.clearSortFilter,
+            ),
+          if (catalog.discountedOnly)
+            _ActiveFilterChip(
+              label: 'Gi\u1ea3m gi\u00e1',
+              onDeleted: catalog.clearDiscountFilter,
+            ),
+          TextButton(
+            onPressed: catalog.resetMenuFilters,
+            child: const Text('Reset'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActiveFilterChip extends StatelessWidget {
+  const _ActiveFilterChip({required this.label, required this.onDeleted});
+
+  final String label;
+  final VoidCallback onDeleted;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: InputChip(
+        label: Text(label),
+        onDeleted: onDeleted,
+        deleteIcon: const Icon(Icons.close, size: 16),
+      ),
+    );
+  }
+}
+
+class _MenuFilterSheet extends StatefulWidget {
+  const _MenuFilterSheet({required this.catalog});
+
+  final CatalogProvider catalog;
+
+  @override
+  State<_MenuFilterSheet> createState() => _MenuFilterSheetState();
+}
+
+class _MenuFilterSheetState extends State<_MenuFilterSheet> {
+  late ProductAvailabilityFilter availability;
+  late ProductPriceRange priceRange;
+  late ProductSortOption sortOption;
+  late bool discountedOnly;
+
+  @override
+  void initState() {
+    super.initState();
+    availability = widget.catalog.availabilityFilter;
+    priceRange = widget.catalog.priceRange;
+    sortOption = widget.catalog.sortOption;
+    discountedOnly = widget.catalog.discountedOnly;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          12,
+          20,
+          MediaQuery.of(context).viewInsets.bottom + 20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 44,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: loafBorder,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Text('B\u1ed9 l\u1ecdc',
+                    style: Theme.of(context).textTheme.titleLarge),
+                const Spacer(),
+                TextButton(
+                  onPressed: _resetDraft,
+                  child: const Text('Reset'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            _FilterSection(
+              title: 'T\u00ecnh tr\u1ea1ng',
+              children: [
+                _FilterChoice(
+                  label: 'T\u1ea5t c\u1ea3',
+                  selected: availability == ProductAvailabilityFilter.all,
+                  onSelected: () => setState(
+                      () => availability = ProductAvailabilityFilter.all),
+                ),
+                _FilterChoice(
+                  label: 'C\u00f2n h\u00e0ng',
+                  selected:
+                      availability == ProductAvailabilityFilter.availableOnly,
+                  onSelected: () => setState(() =>
+                      availability = ProductAvailabilityFilter.availableOnly),
+                ),
+              ],
+            ),
+            _FilterSection(
+              title: 'Gi\u00e1',
+              children: ProductPriceRange.values
+                  .map(
+                    (range) => _FilterChoice(
+                      label: _priceRangeLabel(range),
+                      selected: priceRange == range,
+                      onSelected: () => setState(() => priceRange = range),
+                    ),
+                  )
+                  .toList(),
+            ),
+            _FilterSection(
+              title: 'S\u1eafp x\u1ebfp',
+              children: ProductSortOption.values
+                  .map(
+                    (option) => _FilterChoice(
+                      label: _sortOptionLabel(option),
+                      selected: sortOption == option,
+                      onSelected: () => setState(() => sortOption = option),
+                    ),
+                  )
+                  .toList(),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              activeThumbColor: loafOrange,
+              title: const Text('Ch\u1ec9 m\u00f3n gi\u1ea3m gi\u00e1'),
+              value: discountedOnly,
+              onChanged: (value) => setState(() => discountedOnly = value),
+            ),
+            const SizedBox(height: 14),
+            FilledButton.icon(
+              onPressed: () {
+                widget.catalog.applyMenuFilters(
+                  availability: availability,
+                  priceRange: priceRange,
+                  sortOption: sortOption,
+                  discountedOnly: discountedOnly,
+                );
+                Navigator.pop(context);
+              },
+              icon: const Icon(Icons.check),
+              label: const Text('\u00c1p d\u1ee5ng'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _resetDraft() {
+    setState(() {
+      availability = ProductAvailabilityFilter.all;
+      priceRange = ProductPriceRange.all;
+      sortOption = ProductSortOption.defaultOrder;
+      discountedOnly = false;
+    });
+  }
+}
+
+class _FilterSection extends StatelessWidget {
+  const _FilterSection({required this.title, required this.children});
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: children,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilterChoice extends StatelessWidget {
+  const _FilterChoice({
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onSelected(),
+    );
+  }
+}
+
+class _MenuSearchTelexRepairFormatter extends TextInputFormatter {
+  String? _pendingToneKey;
+
+  void registerToneKey(LogicalKeyboardKey key) {
+    final toneKey = _telexToneKeyFor(key);
+    if (toneKey != null) {
+      _pendingToneKey = toneKey;
+    }
+  }
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final toneKey = _pendingToneKey;
+    _pendingToneKey = null;
+
+    final repairedText = _repairBrokenUniKeyTelexTone(
+      previousText: oldValue.text,
+      incomingText: newValue.text,
+      toneKey: toneKey,
+    );
+    if (repairedText == null || repairedText == newValue.text) {
+      if (toneKey == null && _isLostTelexToneTargetUpdate(oldValue, newValue)) {
+        return oldValue;
+      }
+      return newValue;
+    }
+
+    return TextEditingValue(
+      text: repairedText,
+      selection: TextSelection.collapsed(offset: repairedText.length),
+    );
+  }
+}
+
+class _MenuSearchBar extends StatefulWidget {
   const _MenuSearchBar({
     required this.searchController,
+    required this.hasMenuFilters,
     required this.onApplyFilter,
+    required this.onOpenFilters,
   });
 
   final TextEditingController searchController;
+  final bool hasMenuFilters;
   final ValueChanged<String> onApplyFilter;
+  final VoidCallback onOpenFilters;
+
+  @override
+  State<_MenuSearchBar> createState() => _MenuSearchBarState();
+}
+
+class _MenuSearchBarState extends State<_MenuSearchBar> {
+  late final _MenuSearchTelexRepairFormatter _telexRepairFormatter =
+      _MenuSearchTelexRepairFormatter();
+  late final FocusNode _searchFocusNode = FocusNode(
+    onKeyEvent: _handleKeyEvent,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    HardwareKeyboard.instance.addHandler(_handleHardwareKeyEvent);
+  }
+
+  @override
+  void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleHardwareKeyEvent);
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -124,12 +608,22 @@ class _MenuSearchBar extends StatelessWidget {
         children: [
           Expanded(
             child: TextField(
-              controller: searchController,
+              focusNode: _searchFocusNode,
+              controller: widget.searchController,
+              keyboardType: TextInputType.text,
+              textInputAction: TextInputAction.search,
+              textCapitalization: TextCapitalization.none,
+              autocorrect: false,
+              enableSuggestions: false,
+              smartDashesType: SmartDashesType.disabled,
+              smartQuotesType: SmartQuotesType.disabled,
+              hintLocales: const [Locale('vi', 'VN')],
+              inputFormatters: [_telexRepairFormatter],
               decoration: const InputDecoration(
                 prefixIcon: Icon(Icons.search),
                 hintText: AppStrings.menuSearchHint,
               ),
-              onSubmitted: onApplyFilter,
+              onSubmitted: (value) => widget.onApplyFilter(value.trim()),
             ),
           ),
           const SizedBox(width: 10),
@@ -148,14 +642,48 @@ class _MenuSearchBar extends StatelessWidget {
                 ),
               ],
             ),
-            child: IconButton(
-              onPressed: () => onApplyFilter(searchController.text),
-              icon: const Icon(Icons.tune),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Center(
+                  child: IconButton(
+                    onPressed: widget.onOpenFilters,
+                    icon: const Icon(Icons.tune),
+                  ),
+                ),
+                if (widget.hasMenuFilters)
+                  Positioned(
+                    right: 10,
+                    top: 10,
+                    child: Container(
+                      width: 9,
+                      height: 9,
+                      decoration: const BoxDecoration(
+                        color: loafOrange,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent) {
+      _telexRepairFormatter.registerToneKey(event.logicalKey);
+    }
+    return KeyEventResult.ignored;
+  }
+
+  bool _handleHardwareKeyEvent(KeyEvent event) {
+    if (_searchFocusNode.hasFocus && event is KeyDownEvent) {
+      _telexRepairFormatter.registerToneKey(event.logicalKey);
+    }
+    return false;
   }
 }
 
@@ -356,6 +884,24 @@ class _MenuProductCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _priceRangeLabel(ProductPriceRange range) {
+  return switch (range) {
+    ProductPriceRange.all => 'T\u1ea5t c\u1ea3',
+    ProductPriceRange.under50k => '< 50k',
+    ProductPriceRange.from50kTo100k => '50k-100k',
+    ProductPriceRange.over100k => '> 100k',
+  };
+}
+
+String _sortOptionLabel(ProductSortOption option) {
+  return switch (option) {
+    ProductSortOption.defaultOrder => 'M\u1eb7c \u0111\u1ecbnh',
+    ProductSortOption.nameAZ => 'T\u00ean A-Z',
+    ProductSortOption.priceLowHigh => 'Gi\u00e1 th\u1ea5p-cao',
+    ProductSortOption.priceHighLow => 'Gi\u00e1 cao-th\u1ea5p',
+  };
 }
 
 IconData _categoryIcon(String name) {
