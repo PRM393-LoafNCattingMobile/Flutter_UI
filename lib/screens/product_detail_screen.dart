@@ -21,7 +21,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
-    final maxQuantity = product.unitInStock < 1 ? 1 : product.unitInStock;
+    final canOrder = product.canOrder;
+    final maxQuantity = canOrder ? product.unitInStock : 0;
+    final displayedQuantity = canOrder ? quantity : 0;
     return Scaffold(
       appBar: AppBar(title: Text(product.name)),
       body: CafeSurface(
@@ -77,29 +79,29 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         quantity > 1 ? () => setState(() => quantity--) : null,
                     icon: const Icon(Icons.remove_circle_outline),
                   ),
-                  Text('$quantity',
+                  Text('$displayedQuantity',
                       style: Theme.of(context).textTheme.titleLarge),
                   IconButton(
-                      onPressed: product.isAvailable && quantity < maxQuantity
+                      onPressed: canOrder && quantity < maxQuantity
                           ? () => setState(() => quantity++)
                           : null,
                       icon: const Icon(Icons.add_circle_outline)),
                   const Spacer(),
                   CafeInfoChip(
-                    label: product.isAvailable
+                    label: canOrder
                         ? AppStrings.stockCountLabel(product.unitInStock)
                         : AppStrings.outOfStockLabel,
-                    icon: product.isAvailable
+                    icon: canOrder
                         ? Icons.inventory_2_outlined
                         : Icons.block,
-                    color: product.isAvailable
+                    color: canOrder
                         ? loafSuccess
                         : Theme.of(context).colorScheme.error,
                   ),
                 ],
               ),
             ),
-            if (product.isAvailable && quantity >= maxQuantity) ...[
+            if (canOrder && quantity >= maxQuantity) ...[
               const SizedBox(height: 8),
               Text(
                 AppStrings.maxStockReachedMessage,
@@ -111,19 +113,29 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             ],
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed: product.isAvailable
-                  ? () {
-                      final added =
-                          context.read<CartProvider>().add(product, quantity);
+              onPressed: canOrder
+                  ? () async {
+                      final userId = context.read<AuthProvider>().user?.userId;
+                      final result = await context
+                          .read<CartProvider>()
+                          .addWithSyncResult(product, quantity, userId);
+                      if (!context.mounted) return;
+                      final message = switch (result.status) {
+                        CartAddStatus.added =>
+                          AppStrings.addedItemsToCartMessage(
+                              result.addedQuantity),
+                        CartAddStatus.stockLimit =>
+                          AppStrings.cartStockLimitReachedMessage,
+                        CartAddStatus.authRequired =>
+                          AppStrings.cartSessionExpiredMessage,
+                        CartAddStatus.syncFailed =>
+                          AppStrings.cartSyncFailedMessage,
+                      };
                       final messenger = ScaffoldMessenger.of(context);
                       messenger.hideCurrentSnackBar();
                       messenger.showSnackBar(
                         SnackBar(
-                          content: Text(
-                            added > 0
-                                ? AppStrings.addedItemsToCartMessage(added)
-                                : AppStrings.cartStockLimitReachedMessage,
-                          ),
+                          content: Text(message),
                         ),
                       );
                     }

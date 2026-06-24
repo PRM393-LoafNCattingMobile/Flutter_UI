@@ -16,15 +16,20 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       final auth = context.read<AuthProvider>();
-      auth.loadSession().then((_) {
-        if (!mounted) return;
-        Navigator.of(context).pushReplacementNamed(
-          auth.isLoggedIn ? AppRoutes.home : AppRoutes.login,
-        );
-      });
+      await auth.loadSession();
+      if (!mounted) return;
+      if (auth.isLoggedIn) {
+        await context
+            .read<CartProvider>()
+            .loadForUser(auth.user!.userId, mergeLocal: false);
+      }
+      if (!mounted) return;
+      Navigator.of(context).pushReplacementNamed(
+        auth.isLoggedIn ? AppRoutes.home : AppRoutes.login,
+      );
     });
   }
 
