@@ -60,10 +60,18 @@ class _ReservationScreenState extends State<ReservationScreen> {
         title: const Text(AppStrings.reservationTitle),
         actions: [
           IconButton(
-              onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const ReservationHistoryScreen())),
+              onPressed: () {
+                if (auth.user == null) {
+                  Navigator.pushNamedAndRemoveUntil(
+                      context, AppRoutes.login, (_) => false);
+                  return;
+                }
+
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const ReservationHistoryScreen()));
+              },
               icon: const Icon(Icons.history))
         ],
       ),
