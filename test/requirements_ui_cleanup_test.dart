@@ -8,11 +8,14 @@ import 'package:loafncatting_mobile/main.dart';
 import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/screens/cart_screen.dart';
+import 'package:loafncatting_mobile/screens/chat_screen.dart';
 import 'package:loafncatting_mobile/screens/checkout_screen.dart';
 import 'package:loafncatting_mobile/screens/home_screen.dart';
 import 'package:loafncatting_mobile/screens/more_screen.dart';
+import 'package:loafncatting_mobile/screens/notifications_screen.dart';
 import 'package:loafncatting_mobile/screens/menu_screen.dart';
 import 'package:loafncatting_mobile/screens/product_detail_screen.dart';
+import 'package:loafncatting_mobile/screens/reservation_history_screen.dart';
 import 'package:loafncatting_mobile/screens/reservation_screen.dart';
 import 'package:loafncatting_mobile/services/api_service.dart';
 import 'package:loafncatting_mobile/widgets/state_views.dart';
@@ -238,6 +241,50 @@ void main() {
     await tester.tap(find.text(AppStrings.goToLoginButton));
     await tester.pumpAndSettle();
 
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('NotificationsScreen guards unauthenticated users safely',
+      (tester) async {
+    await tester.pumpWidget(
+      _buildTestApp(
+        child: const NotificationsScreen(),
+        notifications: NotificationProvider(_FakeApiService()),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text(AppStrings.checkoutLoginRequiredMessage), findsOneWidget);
+    expect(find.text(AppStrings.goToLoginButton), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('ChatScreen guards unauthenticated users safely', (tester) async {
+    await tester.pumpWidget(
+      _buildTestApp(
+        child: const ChatScreen(),
+        chat: ChatProvider(_FakeApiService()),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text(AppStrings.checkoutLoginRequiredMessage), findsOneWidget);
+    expect(find.text(AppStrings.goToLoginButton), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('ReservationHistoryScreen guards unauthenticated users safely',
+      (tester) async {
+    await tester.pumpWidget(
+      _buildTestApp(
+        child: const ReservationHistoryScreen(),
+        reservations: ReservationProvider(_FakeApiService()),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text(AppStrings.checkoutLoginRequiredMessage), findsOneWidget);
+    expect(find.text(AppStrings.goToLoginButton), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -510,6 +557,8 @@ Widget _buildTestApp({
   CartProvider? cart,
   CatalogProvider? catalog,
   ReservationProvider? reservations,
+  NotificationProvider? notifications,
+  ChatProvider? chat,
 }) {
   final resolvedApi = api ?? _FakeApiService();
 
@@ -526,6 +575,12 @@ Widget _buildTestApp({
       ),
       ChangeNotifierProvider<ReservationProvider>.value(
         value: reservations ?? ReservationProvider(resolvedApi),
+      ),
+      ChangeNotifierProvider<NotificationProvider>.value(
+        value: notifications ?? NotificationProvider(resolvedApi),
+      ),
+      ChangeNotifierProvider<ChatProvider>.value(
+        value: chat ?? ChatProvider(resolvedApi),
       ),
     ],
     child: MaterialApp(

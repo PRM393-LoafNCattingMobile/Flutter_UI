@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/constants/app_routes.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
+import 'package:loafncatting_mobile/widgets/state_views.dart';
 import 'package:provider/provider.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -20,8 +22,9 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final userId = context.read<AuthProvider>().user!.userId;
-      context.read<ChatProvider>().load(userId);
+      final user = context.read<AuthProvider>().user;
+      if (user == null) return;
+      context.read<ChatProvider>().load(user.userId);
     });
   }
 
@@ -34,7 +37,33 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ChatProvider>();
-    final userId = context.read<AuthProvider>().user!.userId;
+    final user = context.watch<AuthProvider>().user;
+    if (user == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text(AppStrings.chatTitle)),
+        body: CafeSurface(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const ErrorView(AppStrings.checkoutLoginRequiredMessage),
+                  const SizedBox(height: 12),
+                  FilledButton(
+                    onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                        context, AppRoutes.login, (_) => false),
+                    child: const Text(AppStrings.goToLoginButton),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final userId = user.userId;
     return Scaffold(
       appBar: AppBar(title: const Text(AppStrings.chatTitle)),
       body: CafeSurface(

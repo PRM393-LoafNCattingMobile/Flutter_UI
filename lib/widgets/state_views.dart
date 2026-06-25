@@ -74,7 +74,7 @@ String money(double value) {
     RegExp(r'\B(?=(\d{3})+(?!\d))'),
     (_) => '.',
   );
-  return '$formatted VND';
+  return '$formatted VND';
 }
 
 TextStyle? moneyTextStyle(
