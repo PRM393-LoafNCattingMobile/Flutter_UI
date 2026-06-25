@@ -13,6 +13,8 @@ class CartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cart = context.watch<CartProvider>();
+    final userId =
+        context.select<AuthProvider, int?>((auth) => auth.user?.userId);
     return Scaffold(
       appBar: AppBar(title: Text(AppStrings.cartTitle(cart.count))),
       body: CafeSurface(
@@ -63,17 +65,26 @@ class CartScreen extends StatelessWidget {
                               ),
                             ),
                             IconButton(
-                                onPressed: () =>
-                                    cart.updateItem(item, item.quantity - 1),
+                                onPressed: cart.isSyncing
+                                    ? null
+                                    : () => cart.updateSynced(
+                                          item.product,
+                                          item.quantity - 1,
+                                          userId,
+                                        ),
                                 icon: const Icon(Icons.remove)),
                             Text('${item.quantity}',
                                 style: Theme.of(context).textTheme.titleMedium),
                             IconButton(
-                                onPressed: item.quantity <
-                                        item.product.unitInStock
-                                    ? () =>
-                                        cart.updateItem(item, item.quantity + 1)
-                                    : null,
+                                onPressed:
+                                    item.quantity < item.product.unitInStock &&
+                                            !cart.isSyncing
+                                        ? () => cart.updateSynced(
+                                              item.product,
+                                              item.quantity + 1,
+                                              userId,
+                                            )
+                                        : null,
                                 icon: const Icon(Icons.add)),
                           ],
                         ),

@@ -137,6 +137,10 @@ class AppStrings {
       'Đã thêm $quantity món vào giỏ hàng';
   static const cartStockLimitReachedMessage =
       'Giỏ hàng đã đạt giới hạn tồn kho cho món này.';
+  static const cartSessionExpiredMessage =
+      'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+  static const cartSyncFailedMessage =
+      'Chưa thể cập nhật giỏ hàng. Vui lòng thử lại.';
   static const addToCartButton = 'Thêm vào giỏ';
   static const perfectWithTitle = 'Perfect with';
   static const similarItemsTitle = 'Similar items';

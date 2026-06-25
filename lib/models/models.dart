@@ -60,7 +60,8 @@ class Product {
     required this.categoryId,
     required this.categoryName,
     required this.isAvailable,
-  });
+    bool? canOrder,
+  }) : canOrder = canOrder ?? (isAvailable && unitInStock > 0);
 
   final int productId;
   final String name;
@@ -72,6 +73,7 @@ class Product {
   final int categoryId;
   final String categoryName;
   final bool isAvailable;
+  final bool canOrder;
 
   double get displayPrice => discountPrice ?? price;
 
@@ -86,6 +88,7 @@ class Product {
         categoryId: json['categoryId'],
         categoryName: json['categoryName'],
         isAvailable: json['isAvailable'],
+        canOrder: json['canOrder'] as bool?,
       );
 }
 
@@ -137,6 +140,11 @@ class CartItem {
   final Product product;
   int quantity;
   double get subtotal => product.displayPrice * quantity;
+
+  factory CartItem.fromJson(Map<String, dynamic> json) => CartItem(
+        product: Product.fromJson(json['product']),
+        quantity: json['quantity'],
+      );
 }
 
 class CafeTable {
