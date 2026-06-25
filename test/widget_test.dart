@@ -43,6 +43,91 @@ void main() {
     expect(cart.count, 2);
   });
 
+  test('Product.fromJson keeps raw availability and distinct orderability', () {
+    final product = Product.fromJson({
+      'productId': 1,
+      'name': 'Cappuccino',
+      'price': 45000,
+      'unitInStock': 0,
+      'categoryId': 1,
+      'categoryName': 'Drinks',
+      'isAvailable': true,
+      'canOrder': false,
+    });
+
+    expect(product.isAvailable, isTrue);
+    expect(product.canOrder, isFalse);
+  });
+
+  test('CartProvider loadForUser merges local items into persisted cart',
+      () async {
+    final product = Product(
+      productId: 1,
+      name: 'Cappuccino',
+      price: 45000,
+      unitInStock: 5,
+      categoryId: 1,
+      categoryName: 'Drinks',
+      isAvailable: true,
+    );
+    final api = _FakeCartApiService(
+      serverItems: [CartItem(product: product, quantity: 3)],
+    );
+    final cart = CartProvider(api)..add(product, 2);
+
+    await cart.loadForUser(7);
+
+    expect(api.addCartItemCalls, [
+      _CartApiCall(userId: 7, productId: product.productId, quantity: 2),
+    ]);
+    expect(api.getCartUserIds, [7]);
+    expect(cart.count, 3);
+    expect(cart.items.single.product.name, 'Cappuccino');
+  });
+
+  test('CartProvider addWithSyncResult reports auth failure distinctly',
+      () async {
+    final product = Product(
+      productId: 1,
+      name: 'Cappuccino',
+      price: 45000,
+      unitInStock: 5,
+      categoryId: 1,
+      categoryName: 'Drinks',
+      isAvailable: true,
+    );
+    final cart = CartProvider(_FailingCartApiService(
+      ApiException('Unauthorized', statusCode: 401),
+    ));
+
+    final result = await cart.addWithSyncResult(product, 1, 7);
+
+    expect(result.status, CartAddStatus.authRequired);
+    expect(result.addedQuantity, 0);
+    expect(cart.items, isEmpty);
+  });
+
+  test('CartProvider addWithSyncResult reports stock limit distinctly',
+      () async {
+    final product = Product(
+      productId: 1,
+      name: 'Cappuccino',
+      price: 45000,
+      unitInStock: 1,
+      categoryId: 1,
+      categoryName: 'Drinks',
+      isAvailable: true,
+    );
+    final cart = CartProvider(_FakeCartApiService(serverItems: const []))
+      ..add(product, 1);
+
+    final result = await cart.addWithSyncResult(product, 1, 7);
+
+    expect(result.status, CartAddStatus.stockLimit);
+    expect(result.addedQuantity, 0);
+    expect(cart.count, 1);
+  });
+
   testWidgets('Login screen validates empty credentials before submit',
       (WidgetTester tester) async {
     await tester.pumpWidget(
@@ -181,4 +266,63 @@ void main() {
     expect(chat.conversation, isNull);
     expect(chat.messages, isEmpty);
   });
+}
+
+class _FakeCartApiService extends ApiService {
+  _FakeCartApiService({required this.serverItems});
+
+  final List<CartItem> serverItems;
+  final List<_CartApiCall> addCartItemCalls = [];
+  final List<int> getCartUserIds = [];
+
+  @override
+  Future<List<CartItem>> getCart(int userId) async {
+    getCartUserIds.add(userId);
+    return serverItems;
+  }
+
+  @override
+  Future<List<CartItem>> addCartItem(
+      int userId, int productId, int quantity) async {
+    addCartItemCalls.add(
+      _CartApiCall(userId: userId, productId: productId, quantity: quantity),
+    );
+    return serverItems;
+  }
+}
+
+class _FailingCartApiService extends ApiService {
+  _FailingCartApiService(this.exception);
+
+  final ApiException exception;
+
+  @override
+  Future<List<CartItem>> addCartItem(
+      int userId, int productId, int quantity) async {
+    throw exception;
+  }
+}
+
+class _CartApiCall {
+  const _CartApiCall({
+    required this.userId,
+    required this.productId,
+    required this.quantity,
+  });
+
+  final int userId;
+  final int productId;
+  final int quantity;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _CartApiCall &&
+          runtimeType == other.runtimeType &&
+          userId == other.userId &&
+          productId == other.productId &&
+          quantity == other.quantity;
+
+  @override
+  int get hashCode => Object.hash(userId, productId, quantity);
 }

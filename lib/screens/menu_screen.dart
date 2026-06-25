@@ -252,8 +252,9 @@ class _MenuProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final canOrder = product.canOrder;
     final availableColor =
-        product.isAvailable ? loafSuccess : Theme.of(context).colorScheme.error;
+        canOrder ? loafSuccess : Theme.of(context).colorScheme.error;
     return InkWell(
       borderRadius: BorderRadius.circular(18),
       onTap: () => Navigator.push(
@@ -307,17 +308,29 @@ class _MenuProductCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 FilledButton.icon(
-                  onPressed: product.isAvailable
-                      ? () {
-                          final added =
-                              context.read<CartProvider>().add(product, 1);
+                  onPressed: canOrder
+                      ? () async {
+                          final userId =
+                              context.read<AuthProvider>().user?.userId;
+                          final result = await context
+                              .read<CartProvider>()
+                              .addWithSyncResult(product, 1, userId);
+                          if (!context.mounted) return;
+                          final message = switch (result.status) {
+                            CartAddStatus.added =>
+                              AppStrings.productAddedToCart(product.name),
+                            CartAddStatus.stockLimit =>
+                              AppStrings.productStockLimitReached(product.name),
+                            CartAddStatus.authRequired =>
+                              AppStrings.cartSessionExpiredMessage,
+                            CartAddStatus.syncFailed =>
+                              AppStrings.cartSyncFailedMessage,
+                          };
                           final messenger = ScaffoldMessenger.of(context);
                           messenger.hideCurrentSnackBar();
-                          messenger.showSnackBar(SnackBar(
-                              content: Text(added > 0
-                                  ? AppStrings.productAddedToCart(product.name)
-                                  : AppStrings.productStockLimitReached(
-                                      product.name))));
+                          messenger.showSnackBar(
+                            SnackBar(content: Text(message)),
+                          );
                         }
                       : null,
                   icon: const Icon(Icons.add, size: 18),
@@ -331,7 +344,7 @@ class _MenuProductCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 CafeInfoChip(
-                  label: product.isAvailable
+                  label: canOrder
                       ? AppStrings.inStockLabel
                       : AppStrings.outOfStockLabel,
                   color: availableColor,

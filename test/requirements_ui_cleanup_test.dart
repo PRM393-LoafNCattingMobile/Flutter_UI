@@ -322,6 +322,35 @@ void main() {
     expect(find.text(AppStrings.productAddedToCart('Latte')), findsOneWidget);
   });
 
+  testWidgets('MenuScreen treats zero-stock products as out of stock',
+      (tester) async {
+    final api = _FakeApiService(
+      categories: [
+        Category(categoryId: 1, name: 'Drinks'),
+      ],
+      products: [
+        _sampleProduct(unitInStock: 0),
+      ],
+    );
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        child: const MenuScreen(),
+        api: api,
+        catalog: CatalogProvider(api),
+        cart: CartProvider(api),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text(AppStrings.outOfStockLabel), findsOneWidget);
+    expect(find.text(AppStrings.inStockLabel), findsNothing);
+
+    final addButton = find.widgetWithText(FilledButton, AppStrings.addButton);
+    expect(tester.widget<FilledButton>(addButton).onPressed, isNull);
+  });
+
   testWidgets('ReservationScreen keeps reservation flow interactive',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(1200, 1600));
@@ -568,7 +597,7 @@ Widget _buildTestApp({
         value: auth ?? AuthProvider(resolvedApi),
       ),
       ChangeNotifierProvider<CartProvider>.value(
-        value: cart ?? CartProvider(),
+        value: cart ?? CartProvider(resolvedApi),
       ),
       ChangeNotifierProvider<CatalogProvider>.value(
         value: catalog ?? CatalogProvider(resolvedApi),
