@@ -151,25 +151,6 @@ String? _repairBrokenUniKeyTelexTone({
       previousText.substring(targetIndex + 1);
 }
 
-bool _isLostTelexToneTargetUpdate(
-  TextEditingValue oldValue,
-  TextEditingValue newValue,
-) {
-  if (!oldValue.selection.isCollapsed ||
-      oldValue.selection.baseOffset != oldValue.text.length ||
-      !newValue.selection.isCollapsed ||
-      newValue.selection.baseOffset != newValue.text.length) {
-    return false;
-  }
-
-  final targetIndex = _findToneTargetIndex(oldValue.text);
-  if (targetIndex == null) return false;
-
-  final deletedTargetText = oldValue.text.substring(0, targetIndex) +
-      oldValue.text.substring(targetIndex + 1);
-  return newValue.text == deletedTargetText;
-}
-
 const _telexToneIndexes = {
   's': 1,
   'f': 2,
@@ -295,9 +276,10 @@ class _ActiveMenuFilters extends StatelessWidget {
               label: 'C\u00f2n h\u00e0ng',
               onDeleted: catalog.clearAvailabilityFilter,
             ),
-          if (catalog.priceRange != ProductPriceRange.all)
+          if (catalog.hasPriceFilter)
             _ActiveFilterChip(
-              label: _priceRangeLabel(catalog.priceRange),
+              label: _priceRangeLabel(
+                  catalog.priceFilterMin, catalog.priceFilterMax),
               onDeleted: catalog.clearPriceRangeFilter,
             ),
           if (catalog.sortOption != ProductSortOption.defaultOrder)
@@ -350,7 +332,7 @@ class _MenuFilterSheet extends StatefulWidget {
 
 class _MenuFilterSheetState extends State<_MenuFilterSheet> {
   late ProductAvailabilityFilter availability;
-  late ProductPriceRange priceRange;
+  late RangeValues priceRange;
   late ProductSortOption sortOption;
   late bool discountedOnly;
 
@@ -358,7 +340,10 @@ class _MenuFilterSheetState extends State<_MenuFilterSheet> {
   void initState() {
     super.initState();
     availability = widget.catalog.availabilityFilter;
-    priceRange = widget.catalog.priceRange;
+    priceRange = RangeValues(
+      widget.catalog.priceFilterMin,
+      widget.catalog.priceFilterMax,
+    );
     sortOption = widget.catalog.sortOption;
     discountedOnly = widget.catalog.discountedOnly;
   }
@@ -420,15 +405,15 @@ class _MenuFilterSheetState extends State<_MenuFilterSheet> {
             ),
             _FilterSection(
               title: 'Gi\u00e1',
-              children: ProductPriceRange.values
-                  .map(
-                    (range) => _FilterChoice(
-                      label: _priceRangeLabel(range),
-                      selected: priceRange == range,
-                      onSelected: () => setState(() => priceRange = range),
-                    ),
-                  )
-                  .toList(),
+              wrapChildren: false,
+              children: [
+                _PriceRangeSlider(
+                  values: priceRange,
+                  min: widget.catalog.priceFilterFloor,
+                  max: widget.catalog.priceFilterCeiling,
+                  onChanged: (values) => setState(() => priceRange = values),
+                ),
+              ],
             ),
             _FilterSection(
               title: 'S\u1eafp x\u1ebfp',
@@ -454,7 +439,8 @@ class _MenuFilterSheetState extends State<_MenuFilterSheet> {
               onPressed: () {
                 widget.catalog.applyMenuFilters(
                   availability: availability,
-                  priceRange: priceRange,
+                  minPrice: priceRange.start,
+                  maxPrice: priceRange.end,
                   sortOption: sortOption,
                   discountedOnly: discountedOnly,
                 );
@@ -472,7 +458,10 @@ class _MenuFilterSheetState extends State<_MenuFilterSheet> {
   void _resetDraft() {
     setState(() {
       availability = ProductAvailabilityFilter.all;
-      priceRange = ProductPriceRange.all;
+      priceRange = RangeValues(
+        widget.catalog.priceFilterFloor,
+        widget.catalog.priceFilterCeiling,
+      );
       sortOption = ProductSortOption.defaultOrder;
       discountedOnly = false;
     });
@@ -480,10 +469,15 @@ class _MenuFilterSheetState extends State<_MenuFilterSheet> {
 }
 
 class _FilterSection extends StatelessWidget {
-  const _FilterSection({required this.title, required this.children});
+  const _FilterSection({
+    required this.title,
+    required this.children,
+    this.wrapChildren = true,
+  });
 
   final String title;
   final List<Widget> children;
+  final bool wrapChildren;
 
   @override
   Widget build(BuildContext context) {
@@ -494,11 +488,16 @@ class _FilterSection extends StatelessWidget {
         children: [
           Text(title, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: children,
-          ),
+          wrapChildren
+              ? Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: children,
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: children,
+                ),
         ],
       ),
     );
@@ -526,6 +525,47 @@ class _FilterChoice extends StatelessWidget {
   }
 }
 
+class _PriceRangeSlider extends StatelessWidget {
+  const _PriceRangeSlider({
+    required this.values,
+    required this.min,
+    required this.max,
+    required this.onChanged,
+  });
+
+  final RangeValues values;
+  final double min;
+  final double max;
+  final ValueChanged<RangeValues> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          _priceRangeLabel(values.start, values.end),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: loafMuted,
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        RangeSlider(
+          min: min,
+          max: max,
+          divisions: _priceSliderDivisions(min, max),
+          values: values,
+          labels: RangeLabels(
+            _formatPriceSliderLabel(values.start),
+            _formatPriceSliderLabel(values.end),
+          ),
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
+}
+
 class _MenuSearchTelexRepairFormatter extends TextInputFormatter {
   String? _pendingToneKey;
 
@@ -544,15 +584,16 @@ class _MenuSearchTelexRepairFormatter extends TextInputFormatter {
     final toneKey = _pendingToneKey;
     _pendingToneKey = null;
 
+    if (toneKey == null || !newValue.composing.isCollapsed) {
+      return newValue;
+    }
+
     final repairedText = _repairBrokenUniKeyTelexTone(
       previousText: oldValue.text,
       incomingText: newValue.text,
       toneKey: toneKey,
     );
     if (repairedText == null || repairedText == newValue.text) {
-      if (toneKey == null && _isLostTelexToneTargetUpdate(oldValue, newValue)) {
-        return oldValue;
-      }
       return newValue;
     }
 
@@ -886,21 +927,28 @@ class _MenuProductCard extends StatelessWidget {
   }
 }
 
-String _priceRangeLabel(ProductPriceRange range) {
-  return switch (range) {
-    ProductPriceRange.all => 'T\u1ea5t c\u1ea3',
-    ProductPriceRange.under50k => '< 50k',
-    ProductPriceRange.from50kTo100k => '50k-100k',
-    ProductPriceRange.over100k => '> 100k',
-  };
+String _priceRangeLabel(double min, double max) =>
+    '${_formatPriceSliderLabel(min)} - ${_formatPriceSliderLabel(max)}';
+
+String _formatPriceSliderLabel(double price) {
+  final rounded = price.round();
+  if (rounded % 1000 == 0) {
+    return '${rounded ~/ 1000}k';
+  }
+  return money(price);
+}
+
+int _priceSliderDivisions(double min, double max) {
+  final divisions = ((max - min) / 10000).round();
+  return divisions < 1 ? 1 : divisions;
 }
 
 String _sortOptionLabel(ProductSortOption option) {
   return switch (option) {
     ProductSortOption.defaultOrder => 'M\u1eb7c \u0111\u1ecbnh',
     ProductSortOption.nameAZ => 'T\u00ean A-Z',
-    ProductSortOption.priceLowHigh => 'Gi\u00e1 th\u1ea5p-cao',
-    ProductSortOption.priceHighLow => 'Gi\u00e1 cao-th\u1ea5p',
+    ProductSortOption.priceLowHigh => 'Giá Thấp - Cao',
+    ProductSortOption.priceHighLow => 'Giá Cao - Thấp',
   };
 }
 

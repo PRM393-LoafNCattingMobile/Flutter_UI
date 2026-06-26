@@ -44,6 +44,8 @@ void main() {
     expect(AppStrings.addedItemsToCartMessage(2), 'Đã thêm 2 món vào giỏ hàng');
     expect(AppStrings.takeAwayOrderType, 'Mang đi');
     expect(AppStrings.bankTransferPaymentMethod, 'Chuyển khoản ngân hàng');
+    expect(AppStrings.perfectWithTitle, 'Hợp với');
+    expect(AppStrings.similarItemsTitle, 'Món tương tự');
 
     expect(AppRoutes.splash, '/');
     expect(AppRoutes.login, '/login');
