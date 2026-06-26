@@ -95,6 +95,8 @@ class _LoginScreenState extends State<LoginScreen> {
     );
     if (!mounted) return;
     if (ok) {
+      await context.read<CartProvider>().loadForUser(auth.user!.userId);
+      if (!mounted) return;
       Navigator.pushReplacementNamed(context, AppRoutes.home);
     }
   }

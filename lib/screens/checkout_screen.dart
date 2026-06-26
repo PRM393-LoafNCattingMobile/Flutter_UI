@@ -195,7 +195,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         }
       }
 
-      cart.clear();
+      await cart.clearSynced(auth.user!.userId);
       if (!mounted) return;
       await showDialog<void>(
         context: context,

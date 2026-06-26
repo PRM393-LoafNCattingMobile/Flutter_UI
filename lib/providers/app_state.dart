@@ -80,18 +80,119 @@ class AuthProvider extends LoadableProvider {
   }
 }
 
+enum ProductAvailabilityFilter { all, availableOnly }
+
+enum ProductPriceRange { all, under50k, from50kTo100k, over100k }
+
+enum ProductSortOption { defaultOrder, nameAZ, priceLowHigh, priceHighLow }
+
 class CatalogProvider extends LoadableProvider {
-  CatalogProvider(this.api);
+  CatalogProvider(this.api, {List<Product>? initialProducts})
+      : _products = List<Product>.from(initialProducts ?? const []),
+        _allProducts = List<Product>.from(initialProducts ?? const []);
+
   final ApiService api;
   List<Category> categories = [];
-  List<Product> products = [];
+  List<Product> _products;
+  List<Product> _allProducts;
   int? selectedCategoryId;
   String search = '';
+  ProductAvailabilityFilter availabilityFilter = ProductAvailabilityFilter.all;
+  ProductPriceRange priceRange = ProductPriceRange.all;
+  ProductSortOption sortOption = ProductSortOption.defaultOrder;
+  bool discountedOnly = false;
+
+  List<Product> get allProducts => List.unmodifiable(_allProducts);
+
+  List<Product> get products {
+    Iterable<Product> filtered = _products;
+
+    if (availabilityFilter == ProductAvailabilityFilter.availableOnly) {
+      filtered = filtered
+          .where((product) => product.isAvailable && product.unitInStock > 0);
+    }
+
+    filtered = filtered.where((product) {
+      final price = product.displayPrice;
+      return switch (priceRange) {
+        ProductPriceRange.all => true,
+        ProductPriceRange.under50k => price < 50000,
+        ProductPriceRange.from50kTo100k => price >= 50000 && price <= 100000,
+        ProductPriceRange.over100k => price > 100000,
+      };
+    });
+
+    if (discountedOnly) {
+      filtered = filtered.where((product) => product.discountPrice != null);
+    }
+
+    final items = filtered.toList();
+    switch (sortOption) {
+      case ProductSortOption.defaultOrder:
+        break;
+      case ProductSortOption.nameAZ:
+        items.sort((a, b) => a.name.compareTo(b.name));
+        break;
+      case ProductSortOption.priceLowHigh:
+        items.sort((a, b) => a.displayPrice.compareTo(b.displayPrice));
+        break;
+      case ProductSortOption.priceHighLow:
+        items.sort((a, b) => b.displayPrice.compareTo(a.displayPrice));
+        break;
+    }
+    return items;
+  }
+
+  bool get hasMenuFilters =>
+      availabilityFilter != ProductAvailabilityFilter.all ||
+      priceRange != ProductPriceRange.all ||
+      sortOption != ProductSortOption.defaultOrder ||
+      discountedOnly;
+
+  List<String> get activeFilterLabels {
+    final labels = <String>[];
+    if (availabilityFilter == ProductAvailabilityFilter.availableOnly) {
+      labels.add('Còn hàng');
+    }
+    switch (priceRange) {
+      case ProductPriceRange.all:
+        break;
+      case ProductPriceRange.under50k:
+        labels.add('< 50k');
+        break;
+      case ProductPriceRange.from50kTo100k:
+        labels.add('50k-100k');
+        break;
+      case ProductPriceRange.over100k:
+        labels.add('> 100k');
+        break;
+    }
+    switch (sortOption) {
+      case ProductSortOption.defaultOrder:
+        break;
+      case ProductSortOption.nameAZ:
+        labels.add('Tên A-Z');
+        break;
+      case ProductSortOption.priceLowHigh:
+        labels.add('Giá thấp-cao');
+        break;
+      case ProductSortOption.priceHighLow:
+        labels.add('Giá cao-thấp');
+        break;
+    }
+    if (discountedOnly) {
+      labels.add('Giảm giá');
+    }
+    return labels;
+  }
 
   Future<void> load() async => run(() async {
         categories = await api.getCategories();
-        products = await api.getProducts(
+        _products = await api.getProducts(
             categoryId: selectedCategoryId, search: search);
+        if (selectedCategoryId == null && search.trim().isEmpty) {
+          _allProducts = List<Product>.from(_products);
+        }
       });
 
   Future<void> applyFilter({int? categoryId, String? keyword}) async {
@@ -99,20 +200,84 @@ class CatalogProvider extends LoadableProvider {
     search = keyword ?? search;
     await load();
   }
+
+  void applyMenuFilters({
+    required ProductAvailabilityFilter availability,
+    required ProductPriceRange priceRange,
+    required ProductSortOption sortOption,
+    required bool discountedOnly,
+  }) {
+    availabilityFilter = availability;
+    this.priceRange = priceRange;
+    this.sortOption = sortOption;
+    this.discountedOnly = discountedOnly;
+    notifyListeners();
+  }
+
+  void resetMenuFilters() {
+    availabilityFilter = ProductAvailabilityFilter.all;
+    priceRange = ProductPriceRange.all;
+    sortOption = ProductSortOption.defaultOrder;
+    discountedOnly = false;
+    notifyListeners();
+  }
+
+  void clearAvailabilityFilter() {
+    availabilityFilter = ProductAvailabilityFilter.all;
+    notifyListeners();
+  }
+
+  void clearPriceRangeFilter() {
+    priceRange = ProductPriceRange.all;
+    notifyListeners();
+  }
+
+  void clearSortFilter() {
+    sortOption = ProductSortOption.defaultOrder;
+    notifyListeners();
+  }
+
+  void clearDiscountFilter() {
+    discountedOnly = false;
+    notifyListeners();
+  }
+}
+
+enum CartAddStatus { added, stockLimit, authRequired, syncFailed }
+
+class CartAddResult {
+  const CartAddResult({
+    required this.status,
+    this.addedQuantity = 0,
+    this.message,
+  });
+
+  final CartAddStatus status;
+  final int addedQuantity;
+  final String? message;
+
+  bool get didAdd => status == CartAddStatus.added && addedQuantity > 0;
 }
 
 class CartProvider extends ChangeNotifier {
+  CartProvider([ApiService? api]) : api = api ?? ApiService();
+
+  final ApiService api;
   final List<CartItem> items = [];
+  bool isSyncing = false;
+  String? error;
+  int? userId;
 
   double get total => items.fold(0, (sum, item) => sum + item.subtotal);
   int get count => items.fold(0, (sum, item) => sum + item.quantity);
 
   int add(Product product, int quantity) {
-    if (!product.isAvailable || product.unitInStock <= 0 || quantity <= 0) {
+    if (!product.canOrder || quantity <= 0) {
       return 0;
     }
-    final index =
-        items.indexWhere((item) => item.product.productId == product.productId);
+    final index = items.indexWhere(
+      (item) => item.product.productId == product.productId,
+    );
     final currentQuantity = index >= 0 ? items[index].quantity : 0;
     final nextQuantity =
         math.min(currentQuantity + quantity, product.unitInStock);
@@ -129,11 +294,90 @@ class CartProvider extends ChangeNotifier {
     return added;
   }
 
+  Future<CartAddResult> addWithSyncResult(
+      Product product, int quantity, int? userId) async {
+    if (userId == null) {
+      final addedQuantity = add(product, quantity);
+      return CartAddResult(
+        status: addedQuantity > 0
+            ? CartAddStatus.added
+            : CartAddStatus.stockLimit,
+        addedQuantity: addedQuantity,
+      );
+    }
+
+    final rollbackItems = _copyItems();
+    final previousQuantity = _quantityFor(product.productId);
+    final locallyAdded = add(product, quantity);
+    if (locallyAdded <= 0) {
+      return const CartAddResult(status: CartAddStatus.stockLimit);
+    }
+
+    isSyncing = true;
+    error = null;
+    notifyListeners();
+    try {
+      final serverItems =
+          await api.addCartItem(userId, product.productId, quantity);
+      _replaceItems(serverItems, notify: false);
+      final addedQuantity =
+          math.max(0, _quantityFor(product.productId) - previousQuantity);
+      return CartAddResult(
+        status:
+            addedQuantity > 0 ? CartAddStatus.added : CartAddStatus.stockLimit,
+        addedQuantity: addedQuantity,
+      );
+    } on ApiException catch (e) {
+      _replaceItems(rollbackItems, notify: false);
+      error = e.toString();
+      final status = _statusForCartAddError(e);
+      return CartAddResult(status: status, message: e.message);
+    } catch (e) {
+      _replaceItems(rollbackItems, notify: false);
+      error = e.toString();
+      return CartAddResult(
+        status: CartAddStatus.syncFailed,
+        message: e.toString(),
+      );
+    } finally {
+      isSyncing = false;
+      notifyListeners();
+    }
+  }
+
+  Future<int> addSynced(Product product, int quantity, int? userId) async {
+    final result = await addWithSyncResult(product, quantity, userId);
+    return result.addedQuantity;
+  }
+
+  CartAddStatus _statusForCartAddError(ApiException error) {
+    if (error.statusCode == 401 || error.statusCode == 403) {
+      return CartAddStatus.authRequired;
+    }
+    if (error.statusCode == 400) {
+      return CartAddStatus.stockLimit;
+    }
+    return CartAddStatus.syncFailed;
+  }
+
   void update(Product product, int quantity) {
     final index =
         items.indexWhere((item) => item.product.productId == product.productId);
     if (index < 0) return;
-    final nextQuantity = math.min(quantity, product.unitInStock);
+    updateItem(items[index], quantity);
+  }
+
+  void updateItem(CartItem item, int quantity) {
+    final index = items.indexOf(item);
+    if (index < 0) return;
+
+    final productId = item.product.productId;
+    final otherQuantity = items
+        .where((cartItem) => cartItem.product.productId == productId)
+        .where((cartItem) => cartItem != item)
+        .fold(0, (sum, cartItem) => sum + cartItem.quantity);
+    final maxQuantity = item.product.unitInStock - otherQuantity;
+    final nextQuantity = math.min(quantity, maxQuantity);
     if (nextQuantity <= 0) {
       items.removeAt(index);
     } else {
@@ -142,9 +386,114 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateSynced(Product product, int quantity, int? userId) async {
+    if (userId == null) {
+      update(product, quantity);
+      return;
+    }
+
+    final rollbackItems = _copyItems();
+    update(product, quantity);
+    await _sync(
+      () async {
+        final serverItems = quantity <= 0
+            ? await api.removeCartItem(userId, product.productId)
+            : await api.updateCartItem(userId, product.productId, quantity);
+        _replaceItems(serverItems, notify: false);
+      },
+      rollbackItems: rollbackItems,
+    );
+  }
+
   void clear() {
     items.clear();
     notifyListeners();
+  }
+
+  Future<void> clearSynced(int? userId) async {
+    final rollbackItems = _copyItems();
+    clear();
+    if (userId == null) {
+      return;
+    }
+
+    await _sync(
+      () async {
+        final serverItems = await api.clearCart(userId);
+        _replaceItems(serverItems, notify: false);
+      },
+      rollbackItems: rollbackItems,
+    );
+  }
+
+  Future<void> loadForUser(int userId, {bool mergeLocal = true}) async {
+    this.userId = userId;
+    final localItems = _copyItems();
+    await _sync(
+      () async {
+        if (mergeLocal) {
+          for (final item in localItems) {
+            await api.addCartItem(
+              userId,
+              item.product.productId,
+              item.quantity,
+            );
+          }
+        }
+        final serverItems = await api.getCart(userId);
+        _replaceItems(serverItems, notify: false);
+      },
+      rollbackItems: localItems,
+    );
+  }
+
+  void clearSession() {
+    userId = null;
+    isSyncing = false;
+    error = null;
+    items.clear();
+    notifyListeners();
+  }
+
+  Future<bool> _sync(
+    Future<void> Function() action, {
+    required List<CartItem> rollbackItems,
+  }) async {
+    isSyncing = true;
+    error = null;
+    notifyListeners();
+    try {
+      await action();
+      return true;
+    } catch (e) {
+      _replaceItems(rollbackItems, notify: false);
+      error = e.toString();
+      return false;
+    } finally {
+      isSyncing = false;
+      notifyListeners();
+    }
+  }
+
+  int _quantityFor(int productId) {
+    final index =
+        items.indexWhere((item) => item.product.productId == productId);
+    return index < 0 ? 0 : items[index].quantity;
+  }
+
+  List<CartItem> _copyItems() => items
+      .map((item) => CartItem(product: item.product, quantity: item.quantity))
+      .toList();
+
+  void _replaceItems(List<CartItem> nextItems, {bool notify = true}) {
+    items
+      ..clear()
+      ..addAll(nextItems.map(
+        (item) => CartItem(product: item.product, quantity: item.quantity),
+      ));
+    if (notify) {
+      notifyListeners();
+    }
   }
 }
 
@@ -254,7 +603,7 @@ class SessionCoordinator {
     required ChatProvider chat,
   }) async {
     await auth.logout();
-    cart.clear();
+    cart.clearSession();
     reservations.clearSession();
     notifications.clearSession();
     chat.clearSession();

@@ -6,8 +6,10 @@ import 'package:loafncatting_mobile/models/models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiException implements Exception {
-  ApiException(this.message);
+  ApiException(this.message, {this.statusCode});
   final String message;
+  final int? statusCode;
+
   @override
   String toString() => message;
 }
@@ -54,18 +56,27 @@ class ApiService {
     return _decode(response);
   }
 
-  Future<void> _put(String path) async {
-    final response = await _client.put(_uri(path), headers: await _headers());
-    if (response.statusCode >= 400) {
-      throw ApiException(
-          response.body.isEmpty ? 'Yêu cầu thất bại' : response.body);
-    }
+  Future<dynamic> _put(String path, [Map<String, dynamic>? body]) async {
+    final response = await _client.put(
+      _uri(path),
+      headers: await _headers(json: body != null),
+      body: body == null ? null : jsonEncode(body),
+    );
+    return _decode(response);
+  }
+
+  Future<dynamic> _delete(String path) async {
+    final response =
+        await _client.delete(_uri(path), headers: await _headers());
+    return _decode(response);
   }
 
   dynamic _decode(http.Response response) {
     if (response.statusCode >= 400) {
       throw ApiException(
-          response.body.isEmpty ? 'Yêu cầu thất bại' : response.body);
+        response.body.isEmpty ? 'Yêu cầu thất bại' : response.body,
+        statusCode: response.statusCode,
+      );
     }
     if (response.body.isEmpty) {
       return null;
@@ -143,6 +154,41 @@ class ApiService {
     return data as Map<String, dynamic>;
   }
 
+  Future<List<CartItem>> getCart(int userId) async {
+    final data = await _get('/carts/user/$userId');
+    return _cartItemsFromResponse(data);
+  }
+
+  Future<List<CartItem>> addCartItem(
+      int userId, int productId, int quantity) async {
+    final data = await _post('/carts/items', {
+      'userId': userId,
+      'productId': productId,
+      'quantity': quantity,
+    });
+    return _cartItemsFromResponse(data);
+  }
+
+  Future<List<CartItem>> updateCartItem(
+      int userId, int productId, int quantity) async {
+    final data = await _put('/carts/items', {
+      'userId': userId,
+      'productId': productId,
+      'quantity': quantity,
+    });
+    return _cartItemsFromResponse(data);
+  }
+
+  Future<List<CartItem>> removeCartItem(int userId, int productId) async {
+    final data = await _delete('/carts/user/$userId/items/$productId');
+    return _cartItemsFromResponse(data);
+  }
+
+  Future<List<CartItem>> clearCart(int userId) async {
+    final data = await _delete('/carts/user/$userId');
+    return _cartItemsFromResponse(data);
+  }
+
   /// Tạo link/QR thanh toán PayOS cho đơn đang chờ thanh toán.
   Future<Map<String, dynamic>> createPaymentLink(int orderId) async {
     final data = await _post('/payments/create-link', {'orderId': orderId});
@@ -160,7 +206,9 @@ class ApiService {
     return data.map((item) => AppNotification.fromJson(item)).toList();
   }
 
-  Future<void> markNotificationRead(int id) => _put('/notifications/$id/read');
+  Future<void> markNotificationRead(int id) async {
+    await _put('/notifications/$id/read');
+  }
 
   Future<StoreLocation> getStoreLocation() async {
     final data = await _get('/store-location');
@@ -185,5 +233,12 @@ class ApiService {
       'content': content,
     }) as List;
     return data.map((item) => ChatMessage.fromJson(item)).toList();
+  }
+
+  List<CartItem> _cartItemsFromResponse(dynamic data) {
+    final items = (data as Map<String, dynamic>)['items'] as List;
+    return items
+        .map((item) => CartItem.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 }

@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
@@ -74,7 +72,7 @@ String money(double value) {
     RegExp(r'\B(?=(\d{3})+(?!\d))'),
     (_) => '.',
   );
-  return '$formatted VND';
+  return '$formatted VND';
 }
 
 TextStyle? moneyTextStyle(

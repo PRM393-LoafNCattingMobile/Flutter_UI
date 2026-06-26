@@ -72,6 +72,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
     if (!mounted) return;
     if (ok) {
+      await context.read<CartProvider>().loadForUser(auth.user!.userId);
+      if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(
         context,
         AppRoutes.home,

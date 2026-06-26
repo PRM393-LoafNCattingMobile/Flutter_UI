@@ -25,7 +25,7 @@ class LoafApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider(api)),
         ChangeNotifierProvider(create: (_) => CatalogProvider(api)),
-        ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider(create: (_) => CartProvider(api)),
         ChangeNotifierProvider(create: (_) => ReservationProvider(api)),
         ChangeNotifierProvider(create: (_) => CatProvider(api)),
         ChangeNotifierProvider(create: (_) => NotificationProvider(api)),
