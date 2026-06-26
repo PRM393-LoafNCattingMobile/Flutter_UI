@@ -142,8 +142,8 @@ class AppStrings {
   static const cartSyncFailedMessage =
       'Chưa thể cập nhật giỏ hàng. Vui lòng thử lại.';
   static const addToCartButton = 'Thêm vào giỏ';
-  static const perfectWithTitle = 'Perfect with';
-  static const similarItemsTitle = 'Similar items';
+  static const perfectWithTitle = 'Hợp với';
+  static const similarItemsTitle = 'Món tương tự';
   static const retryButton = 'Thử lại';
   static const unknownBreed = 'Chưa rõ giống';
 
