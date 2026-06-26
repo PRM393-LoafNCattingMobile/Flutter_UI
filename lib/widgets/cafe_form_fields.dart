@@ -75,6 +75,7 @@ class CafeTextFormField extends StatelessWidget {
     this.textInputAction,
     this.autofillHints,
     this.obscureText = false,
+    this.readOnly = false,
     this.maxLines = 1,
     this.onFieldSubmitted,
   });
@@ -89,6 +90,7 @@ class CafeTextFormField extends StatelessWidget {
   final TextInputAction? textInputAction;
   final Iterable<String>? autofillHints;
   final bool obscureText;
+  final bool readOnly;
   final int maxLines;
   final ValueChanged<String>? onFieldSubmitted;
 
@@ -101,6 +103,7 @@ class CafeTextFormField extends StatelessWidget {
       textInputAction: textInputAction,
       autofillHints: autofillHints,
       obscureText: obscureText,
+      readOnly: readOnly,
       maxLines: maxLines,
       onFieldSubmitted: onFieldSubmitted,
       decoration: InputDecoration(

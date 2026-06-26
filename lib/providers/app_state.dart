@@ -35,8 +35,10 @@ class AuthProvider extends LoadableProvider {
   AuthProvider(this.api);
   final ApiService api;
   AuthUser? user;
+  EmailVerificationChallenge? pendingVerification;
 
   bool get isLoggedIn => user != null;
+  bool get isAwaitingEmailVerification => pendingVerification != null;
 
   Future<void> loadSession() async {
     final prefs = await SharedPreferences.getInstance();
@@ -50,6 +52,7 @@ class AuthProvider extends LoadableProvider {
   Future<bool> login(String login, String password) async {
     await run(() async {
       user = await api.login(login, password);
+      pendingVerification = null;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('authUser', jsonEncode(user!.toJson()));
     });
@@ -59,9 +62,42 @@ class AuthProvider extends LoadableProvider {
   Future<bool> register(
       String name, String email, String phoneNumber, String password) async {
     await run(() async {
-      user = await api.register(name, email, phoneNumber, password);
+      pendingVerification =
+          await api.register(name, email, phoneNumber, password);
+      user = null;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('authUser');
+    });
+    return error == null;
+  }
+
+  Future<bool> verifyEmail(String verificationCode) async {
+    final challenge = pendingVerification;
+    if (challenge == null) {
+      error = 'Chưa có yêu cầu xác minh email.';
+      notifyListeners();
+      return false;
+    }
+
+    await run(() async {
+      user = await api.verifyEmail(challenge.email, verificationCode);
+      pendingVerification = null;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('authUser', jsonEncode(user!.toJson()));
+    });
+    return error == null;
+  }
+
+  Future<bool> resendVerification() async {
+    final challenge = pendingVerification;
+    if (challenge == null) {
+      error = 'Chưa có yêu cầu xác minh email.';
+      notifyListeners();
+      return false;
+    }
+
+    await run(() async {
+      pendingVerification = await api.resendVerification(challenge.email);
     });
     return error == null;
   }
@@ -74,6 +110,7 @@ class AuthProvider extends LoadableProvider {
     }
     resetLoadState();
     user = null;
+    pendingVerification = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('authUser');
     notifyListeners();
@@ -299,9 +336,8 @@ class CartProvider extends ChangeNotifier {
     if (userId == null) {
       final addedQuantity = add(product, quantity);
       return CartAddResult(
-        status: addedQuantity > 0
-            ? CartAddStatus.added
-            : CartAddStatus.stockLimit,
+        status:
+            addedQuantity > 0 ? CartAddStatus.added : CartAddStatus.stockLimit,
         addedQuantity: addedQuantity,
       );
     }

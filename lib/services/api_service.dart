@@ -73,8 +73,9 @@ class ApiService {
 
   dynamic _decode(http.Response response) {
     if (response.statusCode >= 400) {
+      final message = _extractErrorMessage(response.body);
       throw ApiException(
-        response.body.isEmpty ? 'Yêu cầu thất bại' : response.body,
+        message ?? 'Yêu cầu thất bại',
         statusCode: response.statusCode,
       );
     }
@@ -84,13 +85,33 @@ class ApiService {
     return jsonDecode(response.body);
   }
 
+  String? _extractErrorMessage(String body) {
+    if (body.isEmpty) {
+      return null;
+    }
+
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic>) {
+        final message = decoded['message'];
+        if (message is String && message.trim().isNotEmpty) {
+          return message.trim();
+        }
+      }
+    } catch (_) {
+      // Fall through and return the raw body for non-JSON errors.
+    }
+
+    return body;
+  }
+
   Future<AuthUser> login(String login, String password) async {
     final data =
         await _post('/auth/login', {'login': login, 'password': password});
     return AuthUser.fromJson(data);
   }
 
-  Future<AuthUser> register(
+  Future<EmailVerificationChallenge> register(
       String name, String email, String phoneNumber, String password) async {
     final data = await _post('/auth/register', {
       'name': name,
@@ -98,7 +119,22 @@ class ApiService {
       'phoneNumber': phoneNumber,
       'password': password,
     });
+    return EmailVerificationChallenge.fromJson(data);
+  }
+
+  Future<AuthUser> verifyEmail(String email, String verificationCode) async {
+    final data = await _post('/auth/verify-email', {
+      'email': email,
+      'verificationCode': verificationCode,
+    });
     return AuthUser.fromJson(data);
+  }
+
+  Future<EmailVerificationChallenge> resendVerification(String email) async {
+    final data = await _post('/auth/resend-verification', {
+      'email': email,
+    });
+    return EmailVerificationChallenge.fromJson(data);
   }
 
   Future<void> logout() async {
