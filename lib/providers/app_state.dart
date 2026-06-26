@@ -82,9 +82,10 @@ class AuthProvider extends LoadableProvider {
 
 enum ProductAvailabilityFilter { all, availableOnly }
 
-enum ProductPriceRange { all, under50k, from50kTo100k, over100k }
-
 enum ProductSortOption { defaultOrder, nameAZ, priceLowHigh, priceHighLow }
+
+const double _menuPriceStep = 10000;
+const double _minimumMenuPriceCeiling = 100000;
 
 class CatalogProvider extends LoadableProvider {
   CatalogProvider(this.api, {List<Product>? initialProducts})
@@ -98,11 +99,40 @@ class CatalogProvider extends LoadableProvider {
   int? selectedCategoryId;
   String search = '';
   ProductAvailabilityFilter availabilityFilter = ProductAvailabilityFilter.all;
-  ProductPriceRange priceRange = ProductPriceRange.all;
+  double _minPrice = 0;
+  double? _maxPrice;
   ProductSortOption sortOption = ProductSortOption.defaultOrder;
   bool discountedOnly = false;
 
   List<Product> get allProducts => List.unmodifiable(_allProducts);
+  double get priceFilterFloor => 0;
+
+  double get priceFilterCeiling {
+    final source = _allProducts.isNotEmpty ? _allProducts : _products;
+    if (source.isEmpty) {
+      return _minimumMenuPriceCeiling;
+    }
+
+    final highestPrice = source
+        .map((product) => product.displayPrice)
+        .fold<double>(0, math.max);
+    final roundedCeiling =
+        (highestPrice / _menuPriceStep).ceil() * _menuPriceStep;
+    return math.max(_minimumMenuPriceCeiling, roundedCeiling.toDouble());
+  }
+
+  double get _rawClampedMinPrice => _clampPrice(_minPrice);
+  double get _rawClampedMaxPrice =>
+      _clampPrice(_maxPrice ?? priceFilterCeiling);
+
+  double get priceFilterMin =>
+      math.min(_rawClampedMinPrice, _rawClampedMaxPrice);
+  double get priceFilterMax =>
+      math.max(_rawClampedMinPrice, _rawClampedMaxPrice);
+
+  bool get hasPriceFilter =>
+      priceFilterMin > priceFilterFloor ||
+      priceFilterMax < priceFilterCeiling;
 
   List<Product> get products {
     Iterable<Product> filtered = _products;
@@ -112,14 +142,11 @@ class CatalogProvider extends LoadableProvider {
           .where((product) => product.isAvailable && product.unitInStock > 0);
     }
 
+    final minPrice = priceFilterMin;
+    final maxPrice = priceFilterMax;
     filtered = filtered.where((product) {
       final price = product.displayPrice;
-      return switch (priceRange) {
-        ProductPriceRange.all => true,
-        ProductPriceRange.under50k => price < 50000,
-        ProductPriceRange.from50kTo100k => price >= 50000 && price <= 100000,
-        ProductPriceRange.over100k => price > 100000,
-      };
+      return price >= minPrice && price <= maxPrice;
     });
 
     if (discountedOnly) {
@@ -145,7 +172,7 @@ class CatalogProvider extends LoadableProvider {
 
   bool get hasMenuFilters =>
       availabilityFilter != ProductAvailabilityFilter.all ||
-      priceRange != ProductPriceRange.all ||
+      hasPriceFilter ||
       sortOption != ProductSortOption.defaultOrder ||
       discountedOnly;
 
@@ -154,18 +181,11 @@ class CatalogProvider extends LoadableProvider {
     if (availabilityFilter == ProductAvailabilityFilter.availableOnly) {
       labels.add('Còn hàng');
     }
-    switch (priceRange) {
-      case ProductPriceRange.all:
-        break;
-      case ProductPriceRange.under50k:
-        labels.add('< 50k');
-        break;
-      case ProductPriceRange.from50kTo100k:
-        labels.add('50k-100k');
-        break;
-      case ProductPriceRange.over100k:
-        labels.add('> 100k');
-        break;
+    if (hasPriceFilter) {
+      labels.add(_formatCompactMenuPriceRange(
+        priceFilterMin,
+        priceFilterMax,
+      ));
     }
     switch (sortOption) {
       case ProductSortOption.defaultOrder:
@@ -174,10 +194,10 @@ class CatalogProvider extends LoadableProvider {
         labels.add('Tên A-Z');
         break;
       case ProductSortOption.priceLowHigh:
-        labels.add('Giá thấp-cao');
+        labels.add('Giá Thấp - Cao');
         break;
       case ProductSortOption.priceHighLow:
-        labels.add('Giá cao-thấp');
+        labels.add('Giá Cao - Thấp');
         break;
     }
     if (discountedOnly) {
@@ -203,12 +223,17 @@ class CatalogProvider extends LoadableProvider {
 
   void applyMenuFilters({
     required ProductAvailabilityFilter availability,
-    required ProductPriceRange priceRange,
+    required double minPrice,
+    required double maxPrice,
     required ProductSortOption sortOption,
     required bool discountedOnly,
   }) {
     availabilityFilter = availability;
-    this.priceRange = priceRange;
+    final nextMin = _clampPrice(_snapPrice(minPrice));
+    final nextMax = _clampPrice(_snapPrice(maxPrice));
+    _minPrice = math.min(nextMin, nextMax);
+    final resolvedMax = math.max(nextMin, nextMax);
+    _maxPrice = resolvedMax >= priceFilterCeiling ? null : resolvedMax;
     this.sortOption = sortOption;
     this.discountedOnly = discountedOnly;
     notifyListeners();
@@ -216,7 +241,8 @@ class CatalogProvider extends LoadableProvider {
 
   void resetMenuFilters() {
     availabilityFilter = ProductAvailabilityFilter.all;
-    priceRange = ProductPriceRange.all;
+    _minPrice = priceFilterFloor;
+    _maxPrice = null;
     sortOption = ProductSortOption.defaultOrder;
     discountedOnly = false;
     notifyListeners();
@@ -228,7 +254,8 @@ class CatalogProvider extends LoadableProvider {
   }
 
   void clearPriceRangeFilter() {
-    priceRange = ProductPriceRange.all;
+    _minPrice = priceFilterFloor;
+    _maxPrice = null;
     notifyListeners();
   }
 
@@ -241,7 +268,24 @@ class CatalogProvider extends LoadableProvider {
     discountedOnly = false;
     notifyListeners();
   }
+
+  double _clampPrice(double price) =>
+      price.clamp(priceFilterFloor, priceFilterCeiling).toDouble();
+
+  double _snapPrice(double price) =>
+      (price / _menuPriceStep).round() * _menuPriceStep;
 }
+
+String _formatCompactMenuPrice(double price) {
+  final rounded = price.round();
+  if (rounded % 1000 == 0) {
+    return '${rounded ~/ 1000}k';
+  }
+  return '$rounded VND';
+}
+
+String _formatCompactMenuPriceRange(double min, double max) =>
+    '${_formatCompactMenuPrice(min)} - ${_formatCompactMenuPrice(max)}';
 
 enum CartAddStatus { added, stockLimit, authRequired, syncFailed }
 
