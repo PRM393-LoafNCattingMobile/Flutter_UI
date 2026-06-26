@@ -180,14 +180,15 @@ void main() {
 
     catalog.applyMenuFilters(
       availability: ProductAvailabilityFilter.availableOnly,
-      priceRange: ProductPriceRange.from50kTo100k,
+      minPrice: 50000,
+      maxPrice: 100000,
       discountedOnly: true,
       sortOption: ProductSortOption.priceLowHigh,
     );
 
     expect(catalog.products.map((product) => product.name), ['Discount Cake']);
     expect(catalog.activeFilterLabels,
-        ['Còn hàng', '50k-100k', 'Giá thấp-cao', 'Giảm giá']);
+        ['Còn hàng', '50k - 100k', 'Giá Thấp - Cao', 'Giảm giá']);
   });
 
   test('CatalogProvider resets local menu filters', () {
@@ -206,7 +207,8 @@ void main() {
       ],
     )..applyMenuFilters(
         availability: ProductAvailabilityFilter.availableOnly,
-        priceRange: ProductPriceRange.from50kTo100k,
+        minPrice: 50000,
+        maxPrice: 100000,
         discountedOnly: true,
         sortOption: ProductSortOption.priceHighLow,
       );
@@ -291,7 +293,7 @@ void main() {
     expect(find.text('xin ch\u00e0o'), findsOneWidget);
   });
 
-  testWidgets('Menu search preserves base text when UniKey hides the tone key',
+  testWidgets('Menu search allows Android soft-keyboard deletion at word end',
       (WidgetTester tester) async {
     final api = _RecordingMenuApiService();
 
@@ -321,8 +323,9 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('xin chao'), findsOneWidget);
-    expect(find.text('xin cho'), findsNothing);
+    expect(find.text('xin cho'), findsOneWidget);
+    expect(find.text('xin chao'), findsNothing);
+    expect(find.text('xin ch\u00e0o'), findsNothing);
   });
 
   testWidgets('Menu search applies UniKey Telex dot tone from captured key',
@@ -360,7 +363,7 @@ void main() {
     expect(find.text('b\u1ea1n'), findsOneWidget);
   });
 
-  testWidgets('Menu search does not guess grave tone without a captured key',
+  testWidgets('Menu search allows vowel deletion without guessing a tone',
       (WidgetTester tester) async {
     final api = _RecordingMenuApiService();
 
@@ -390,7 +393,8 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('ban'), findsOneWidget);
+    expect(find.text('bn'), findsOneWidget);
+    expect(find.text('ban'), findsNothing);
     expect(find.text('b\u00e0n'), findsNothing);
   });
 
@@ -460,11 +464,13 @@ void main() {
     expect(find.text('Tình trạng'), findsOneWidget);
     expect(find.text('Tất cả'), findsAtLeastNWidgets(2));
     expect(find.text('Còn hàng'), findsAtLeastNWidgets(2));
+    expect(find.text('Giá'), findsOneWidget);
+    expect(find.byType(RangeSlider), findsOneWidget);
     expect(find.text('Sắp xếp'), findsOneWidget);
     expect(find.text('Mặc định'), findsOneWidget);
     expect(find.text('Tên A-Z'), findsOneWidget);
-    expect(find.text('Giá thấp-cao'), findsOneWidget);
-    expect(find.text('Giá cao-thấp'), findsOneWidget);
+    expect(find.text('Giá Thấp - Cao'), findsOneWidget);
+    expect(find.text('Giá Cao - Thấp'), findsOneWidget);
     expect(find.text('Chỉ món giảm giá'), findsOneWidget);
     expect(find.text('Áp dụng'), findsOneWidget);
   });
