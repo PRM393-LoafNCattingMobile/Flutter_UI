@@ -34,6 +34,22 @@ class AuthUser {
       };
 }
 
+class EmailVerificationChallenge {
+  EmailVerificationChallenge({
+    required this.email,
+    required this.expiresAtUtc,
+  });
+
+  final String email;
+  final DateTime expiresAtUtc;
+
+  factory EmailVerificationChallenge.fromJson(Map<String, dynamic> json) =>
+      EmailVerificationChallenge(
+        email: json['email'],
+        expiresAtUtc: DateTime.parse(json['expiresAtUtc']),
+      );
+}
+
 class Category {
   Category({required this.categoryId, required this.name, this.description});
 

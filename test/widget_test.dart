@@ -518,6 +518,55 @@ void main() {
     expect(find.text('Vui lòng nhập mật khẩu'), findsOneWidget);
   });
 
+  testWidgets(
+      'Register screen shows inline verification actions after successful register',
+      (WidgetTester tester) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (_) => AuthProvider(
+          _RegisterChallengeApiService(
+            challenge: EmailVerificationChallenge(
+              email: 'newuser@example.com',
+              expiresAtUtc: DateTime.utc(2026, 6, 26, 6, 13),
+            ),
+          ),
+        ),
+        child: MaterialApp(
+          theme: buildLoafTheme(),
+          home: const RegisterScreen(),
+        ),
+      ),
+    );
+
+    await tester.enterText(
+      find.byType(TextFormField).at(0),
+      'New User',
+    );
+    await tester.enterText(
+      find.byType(TextFormField).at(1),
+      'newuser@example.com',
+    );
+    await tester.enterText(
+      find.byType(TextFormField).at(2),
+      '0901234567',
+    );
+    await tester.enterText(
+      find.byType(TextFormField).at(3),
+      '123456',
+    );
+
+    await tester.tap(find.text(AppStrings.registerButton));
+    await tester.pump();
+
+    expect(find.text(AppStrings.verificationCardTitle), findsOneWidget);
+    expect(find.text(AppStrings.verifyEmailButton), findsOneWidget);
+    expect(find.text(AppStrings.resendVerificationButton), findsOneWidget);
+    expect(find.textContaining('newuser@example.com'), findsWidgets);
+  });
+
   test('SessionCoordinator logout clears persisted and in-memory session data',
       () async {
     final authUser = AuthUser(
@@ -697,4 +746,19 @@ class _RecordingMenuApiService extends ApiService {
       ),
     ];
   }
+}
+
+class _RegisterChallengeApiService extends ApiService {
+  _RegisterChallengeApiService({required this.challenge});
+
+  final EmailVerificationChallenge challenge;
+
+  @override
+  Future<EmailVerificationChallenge> register(
+    String name,
+    String email,
+    String phoneNumber,
+    String password,
+  ) async =>
+      challenge;
 }

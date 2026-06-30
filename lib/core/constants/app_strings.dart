@@ -19,6 +19,26 @@ class AppStrings {
       'Đặt món nhanh hơn, giữ chỗ ấm cúng và gặp gỡ các bé mèo.';
   static const registerHelperText =
       'Hồ sơ của bạn giúp quản lý đơn hàng và lượt đặt bàn ở cùng một nơi.';
+  static const verificationCodeLabel = 'Mã xác minh email';
+  static const verificationCodeHint = 'Nhập 6 số vừa nhận được';
+  static const verifyEmailButton = 'Xác minh email';
+  static const resendVerificationButton = 'Gửi lại mã';
+  static const verificationCardTitle = 'Kiểm tra email của bạn';
+  static const verificationCardSubtitle =
+      'Nhập mã xác minh vừa được gửi để hoàn tất tạo tài khoản.';
+  static const verificationSuccessMessage =
+      'Xác minh thành công, chào mừng bạn đến với quán!';
+  static const resendVerificationSuccessMessage = 'Đã gửi lại mã xác minh mới.';
+  static const verificationCodeRequiredMessage =
+      'Vui lòng nhập mã xác minh email.';
+  static String verificationEmailSentTo(String email) =>
+      'Mã xác minh đã được gửi đến $email';
+  static String verificationExpiresAt(DateTime expiresAtLocal) {
+    final hour = expiresAtLocal.hour.toString().padLeft(2, '0');
+    final minute = expiresAtLocal.minute.toString().padLeft(2, '0');
+    return 'Mã hiện tại hết hạn lúc $hour:$minute.';
+  }
+
   static const profileTitle = 'Hồ sơ';
   static const profileGuestTitle = 'Khách của quán';
   static const profileGuestSubtitle = "Thành viên Loaf n' Catting";
