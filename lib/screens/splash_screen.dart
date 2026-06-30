@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/constants/app_routes.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
+import 'package:loafncatting_mobile/features/admin/admin_routing.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
 import 'package:provider/provider.dart';
@@ -28,7 +29,9 @@ class _SplashScreenState extends State<SplashScreen> {
       }
       if (!mounted) return;
       Navigator.of(context).pushReplacementNamed(
-        auth.isLoggedIn ? AppRoutes.home : AppRoutes.login,
+        auth.isLoggedIn
+            ? RoleRouting.homeRouteForRole(auth.user!.roleName)
+            : AppRoutes.login,
       );
     });
   }

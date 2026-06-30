@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/constants/app_routes.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
+import 'package:loafncatting_mobile/features/admin/admin_routing.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:loafncatting_mobile/widgets/cafe_form_fields.dart';
@@ -97,7 +98,10 @@ class _LoginScreenState extends State<LoginScreen> {
     if (ok) {
       await context.read<CartProvider>().loadForUser(auth.user!.userId);
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, AppRoutes.home);
+      Navigator.pushReplacementNamed(
+        context,
+        RoleRouting.homeRouteForRole(auth.user!.roleName),
+      );
     }
   }
 }
