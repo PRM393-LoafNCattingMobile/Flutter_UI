@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:loafncatting_mobile/core/api_config.dart';
+import 'package:loafncatting_mobile/features/admin/models/admin_chat_models.dart';
 import 'package:loafncatting_mobile/features/admin/models/admin_models.dart';
 import 'package:loafncatting_mobile/models/models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -29,7 +30,7 @@ class ApiService {
   Future<Map<String, String>> _headers({bool json = false}) async {
     final headers = <String, String>{};
     if (json) {
-      headers['Content-Type'] = 'application/json';
+      headers['Content-Type'] = 'application/json; charset=utf-8';
     }
 
     final prefs = await SharedPreferences.getInstance();
@@ -73,17 +74,18 @@ class ApiService {
   }
 
   dynamic _decode(http.Response response) {
+    final decodedBody = utf8.decode(response.bodyBytes);
     if (response.statusCode >= 400) {
-      final message = _extractErrorMessage(response.body);
+      final message = _extractErrorMessage(decodedBody);
       throw ApiException(
         message ?? 'Yêu cầu thất bại',
         statusCode: response.statusCode,
       );
     }
-    if (response.body.isEmpty) {
+    if (decodedBody.isEmpty) {
       return null;
     }
-    return jsonDecode(response.body);
+    return jsonDecode(decodedBody);
   }
 
   String? _extractErrorMessage(String body) {
@@ -267,6 +269,27 @@ class ApiService {
     final data = await _post('/messages', {
       'conversationId': conversationId,
       'senderUserId': senderUserId,
+      'content': content,
+    }) as List;
+    return data.map((item) => ChatMessage.fromJson(item)).toList();
+  }
+
+  Future<List<AdminConversationSummary>> getAdminConversations() async {
+    final data = await _get('/staff/conversations') as List;
+    return data
+        .map((item) =>
+            AdminConversationSummary.fromJson(Map<String, dynamic>.from(item as Map)))
+        .toList();
+  }
+
+  Future<List<ChatMessage>> getAdminConversationMessages(int conversationId) async {
+    final data = await _get('/staff/conversations/$conversationId/messages') as List;
+    return data.map((item) => ChatMessage.fromJson(item)).toList();
+  }
+
+  Future<List<ChatMessage>> sendAdminMessage(
+      int conversationId, String content) async {
+    final data = await _post('/staff/conversations/$conversationId/messages', {
       'content': content,
     }) as List;
     return data.map((item) => ChatMessage.fromJson(item)).toList();

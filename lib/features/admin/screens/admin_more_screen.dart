@@ -72,12 +72,6 @@ class AdminMoreScreen extends StatelessWidget {
                       ),
                     ),
                   ],
-                  ListTile(
-                    leading: const Icon(Icons.chat_bubble_outline),
-                    title: const Text(AppStrings.adminMoreChat),
-                    subtitle: const Text(AppStrings.adminChatComingSoon),
-                    enabled: false,
-                  ),
                 ],
               ),
             ),

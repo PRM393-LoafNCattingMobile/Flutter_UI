@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/features/chat/services/chat_realtime_service.dart';
 import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -650,15 +652,35 @@ class LocationProvider extends LoadableProvider {
 }
 
 class ChatProvider extends LoadableProvider {
-  ChatProvider(this.api);
+  ChatProvider(this.api, {ChatRealtimeService? realtime})
+      : _realtime = realtime ?? ChatRealtimeService();
   final ApiService api;
+  final ChatRealtimeService _realtime;
   Conversation? conversation;
   List<ChatMessage> messages = [];
+  StreamSubscription<List<ChatMessage>>? _threadSubscription;
 
   Future<void> load(int userId) async => run(() async {
         conversation = await api.getConversation(userId);
+        messages = [];
         messages = await api.getMessages(conversation!.conversationId);
+        await _threadSubscription?.cancel();
+        _threadSubscription = _realtime.threadUpdates.listen((items) {
+          if (items.isEmpty) return;
+          if (items.first.conversationId != conversation?.conversationId) return;
+          messages = items;
+          notifyListeners();
+        });
+        unawaited(_joinConversationSafely(conversation!.conversationId));
       });
+
+  Future<void> _joinConversationSafely(int conversationId) async {
+    try {
+      await _realtime.joinConversation(conversationId);
+    } catch (_) {
+      // Customer chat should still work in polling/API mode if realtime is down.
+    }
+  }
 
   Future<void> send(int userId, String content) async => run(() async {
         conversation ??= await api.getConversation(userId);
@@ -670,7 +692,17 @@ class ChatProvider extends LoadableProvider {
     resetLoadState();
     conversation = null;
     messages = [];
+    _threadSubscription?.cancel();
+    _threadSubscription = null;
+    _realtime.stop();
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _threadSubscription?.cancel();
+    _realtime.dispose();
+    super.dispose();
   }
 }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/constants/app_routes.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
+import 'package:loafncatting_mobile/features/admin/providers/admin_chat_providers.dart';
 import 'package:loafncatting_mobile/features/admin/providers/admin_providers.dart';
 import 'package:loafncatting_mobile/features/admin/screens/admin_shell_screen.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
@@ -42,6 +43,8 @@ class LoafApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => StaffReservationProvider(api)),
         ChangeNotifierProvider(create: (_) => AdminUserProvider(api)),
         ChangeNotifierProvider(create: (_) => DashboardProvider(api)),
+        ChangeNotifierProvider(create: (_) => AdminChatInboxProvider(api)),
+        ChangeNotifierProvider(create: (_) => AdminChatDetailProvider(api)),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

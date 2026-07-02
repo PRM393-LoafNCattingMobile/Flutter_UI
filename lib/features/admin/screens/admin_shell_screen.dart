@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/features/admin/screens/admin_catalog_screen.dart';
+import 'package:loafncatting_mobile/features/admin/screens/admin_chat_inbox_screen.dart';
 import 'package:loafncatting_mobile/features/admin/screens/admin_cats_screen.dart';
 import 'package:loafncatting_mobile/features/admin/screens/admin_dashboard_screen.dart';
 import 'package:loafncatting_mobile/features/admin/screens/admin_more_screen.dart';
@@ -26,6 +27,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     AdminReservationsScreen(),
     AdminCatalogScreen(),
     AdminCatsScreen(),
+    AdminChatInboxScreen(),
     AdminMoreScreen(),
   ];
 
@@ -58,6 +60,10 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               icon: Icon(Icons.pets_outlined),
               selectedIcon: Icon(Icons.pets),
               label: AppStrings.adminCatsNavLabel),
+          NavigationDestination(
+              icon: Icon(Icons.chat_bubble_outline),
+              selectedIcon: Icon(Icons.chat_bubble),
+              label: AppStrings.adminChatNavLabel),
           NavigationDestination(
               icon: Icon(Icons.more_horiz),
               selectedIcon: Icon(Icons.more_horiz),

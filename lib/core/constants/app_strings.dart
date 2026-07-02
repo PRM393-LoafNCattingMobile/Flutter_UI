@@ -173,6 +173,7 @@ class AppStrings {
   static const adminReservationsNavLabel = 'Đặt bàn';
   static const adminCatalogNavLabel = 'Thực đơn';
   static const adminCatsNavLabel = 'Mèo';
+  static const adminChatNavLabel = 'Chat';
   static const adminMoreNavLabel = 'Thêm';
 
   static const adminDashboardTitle = 'Tổng quan';
@@ -286,6 +287,15 @@ class AppStrings {
   static const adminMoreStoreLocation = 'Cập nhật vị trí cửa hàng';
   static const adminMoreChat = 'Trò chuyện với khách';
   static const adminChatComingSoon = 'Tính năng chat sẽ sớm có mặt.';
+  static const adminChatTitle = 'Hộp thư khách hàng';
+  static const adminChatEmptyMessage = 'Chưa có cuộc trò chuyện nào.';
+  static const adminChatSubtitle =
+      'Theo dõi tin nhắn mới và phản hồi khách hàng theo thời gian thực.';
+  static const adminChatThreadSubtitle =
+      'Trao đổi hỗ trợ trực tiếp với khách hàng.';
+  static const adminChatComposerHint = 'Nhập phản hồi cho khách hàng';
+  static const adminChatCustomerLabel = 'Khách hàng';
+  static const adminChatStoreLabel = 'Hỗ trợ';
 
   static String localizedRoleName(String roleName) {
     switch (roleName.trim().toLowerCase()) {
