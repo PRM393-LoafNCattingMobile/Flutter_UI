@@ -7,7 +7,7 @@ import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
 import 'package:loafncatting_mobile/widgets/state_views.dart';
 import 'package:provider/provider.dart';
 
-/// Quản lý danh mục (Admin-only). Dùng chung `AdminCatalogProvider`.
+/// Quản lý danh mục cho Admin/Staff. Dùng chung `AdminCatalogProvider`.
 class AdminCategoriesScreen extends StatelessWidget {
   const AdminCategoriesScreen({super.key});
 

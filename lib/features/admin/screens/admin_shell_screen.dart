@@ -8,9 +8,9 @@ import 'package:loafncatting_mobile/features/admin/screens/admin_more_screen.dar
 import 'package:loafncatting_mobile/features/admin/screens/admin_orders_screen.dart';
 import 'package:loafncatting_mobile/features/admin/screens/admin_reservations_screen.dart';
 
-/// Khung điều hướng cho Admin/Staff với 6 tab: Tổng quan, Đơn hàng, Đặt bàn,
-/// Thực đơn, Mèo, Thêm. Admin và Staff dùng chung khung này; phân quyền hành
-/// động nằm trong từng màn.
+/// Khung điều hướng cho Admin/Staff với 7 tab: Tổng quan, Đơn hàng, Đặt bàn,
+/// Thực đơn, Mèo, Chat, Thêm. Admin và Staff dùng chung khung này; phân quyền
+/// hành động nằm trong từng màn.
 class AdminShellScreen extends StatefulWidget {
   const AdminShellScreen({super.key});
 

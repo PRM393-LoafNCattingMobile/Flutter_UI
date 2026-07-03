@@ -30,8 +30,8 @@ class _AdminCatalogScreenState extends State<AdminCatalogScreen> {
     });
   }
 
-  bool get _isAdmin =>
-      RoleRouting.isAdmin(context.read<AuthProvider>().user?.roleName);
+  bool get _canManage =>
+      RoleRouting.isStaffOrAdmin(context.read<AuthProvider>().user?.roleName);
 
   Future<void> _openProductForm(Product? product) async {
     final lookups = context.read<AdminLookupsProvider>().lookups;
@@ -99,13 +99,13 @@ class _AdminCatalogScreenState extends State<AdminCatalogScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AdminCatalogProvider>();
-    final isAdmin = _isAdmin;
+    final canManage = _canManage;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(AppStrings.adminCatalogTitle),
         actions: [
-          if (isAdmin)
+          if (canManage)
             IconButton(
               icon: const Icon(Icons.category_outlined),
               tooltip: AppStrings.adminManageCategoriesTitle,
@@ -117,17 +117,17 @@ class _AdminCatalogScreenState extends State<AdminCatalogScreen> {
             ),
         ],
       ),
-      floatingActionButton: isAdmin
+      floatingActionButton: canManage
           ? FloatingActionButton(
               onPressed: () => _openProductForm(null),
               child: const Icon(Icons.add),
             )
           : null,
-      body: CafeSurface(child: _buildBody(provider, isAdmin)),
+      body: CafeSurface(child: _buildBody(provider, canManage)),
     );
   }
 
-  Widget _buildBody(AdminCatalogProvider provider, bool isAdmin) {
+  Widget _buildBody(AdminCatalogProvider provider, bool canManage) {
     if (provider.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -147,7 +147,7 @@ class _AdminCatalogScreenState extends State<AdminCatalogScreen> {
           final product = provider.products[index];
           return _ProductCard(
             product: product,
-            isAdmin: isAdmin,
+            canManage: canManage,
             onEdit: () => _openProductForm(product),
             onDelete: () => _deleteProduct(product),
             onEditAvailability: () => _editAvailability(product),
@@ -161,14 +161,14 @@ class _AdminCatalogScreenState extends State<AdminCatalogScreen> {
 class _ProductCard extends StatelessWidget {
   const _ProductCard({
     required this.product,
-    required this.isAdmin,
+    required this.canManage,
     required this.onEdit,
     required this.onDelete,
     required this.onEditAvailability,
   });
 
   final Product product;
-  final bool isAdmin;
+  final bool canManage;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onEditAvailability;
@@ -208,7 +208,7 @@ class _ProductCard extends StatelessWidget {
           const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerRight,
-            child: isAdmin
+            child: canManage
                 ? Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

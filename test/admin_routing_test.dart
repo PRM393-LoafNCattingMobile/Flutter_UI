@@ -59,7 +59,7 @@ void main() {
     );
 
     final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
-    expect(navBar.destinations, hasLength(6));
-    expect(find.byType(NavigationDestination), findsNWidgets(6));
+    expect(navBar.destinations, hasLength(7));
+    expect(find.byType(NavigationDestination), findsNWidgets(7));
   });
 }

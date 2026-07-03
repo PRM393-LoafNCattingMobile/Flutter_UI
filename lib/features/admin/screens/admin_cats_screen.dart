@@ -37,8 +37,8 @@ class _AdminCatsScreenState extends State<AdminCatsScreen> {
     });
   }
 
-  bool get _isAdmin =>
-      RoleRouting.isAdmin(context.read<AuthProvider>().user?.roleName);
+  bool get _canManage =>
+      RoleRouting.isStaffOrAdmin(context.read<AuthProvider>().user?.roleName);
 
   Future<void> _openForm(Cat? cat) async {
     final lookups = context.read<AdminLookupsProvider>().lookups;
@@ -95,20 +95,20 @@ class _AdminCatsScreenState extends State<AdminCatsScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AdminCatProvider>();
-    final isAdmin = _isAdmin;
+    final canManage = _canManage;
     return Scaffold(
       appBar: AppBar(title: const Text(AppStrings.adminCatsTitle)),
-      floatingActionButton: isAdmin
+      floatingActionButton: canManage
           ? FloatingActionButton(
               onPressed: () => _openForm(null),
               child: const Icon(Icons.add),
             )
           : null,
-      body: CafeSurface(child: _buildBody(provider, isAdmin)),
+      body: CafeSurface(child: _buildBody(provider, canManage)),
     );
   }
 
-  Widget _buildBody(AdminCatProvider provider, bool isAdmin) {
+  Widget _buildBody(AdminCatProvider provider, bool canManage) {
     if (provider.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -154,7 +154,7 @@ class _AdminCatsScreenState extends State<AdminCatsScreen> {
                 const SizedBox(height: 8),
                 Align(
                   alignment: Alignment.centerRight,
-                  child: isAdmin
+                  child: canManage
                       ? Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [

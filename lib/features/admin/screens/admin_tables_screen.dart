@@ -37,8 +37,8 @@ class _AdminTablesScreenState extends State<AdminTablesScreen> {
     });
   }
 
-  bool get _isAdmin =>
-      RoleRouting.isAdmin(context.read<AuthProvider>().user?.roleName);
+  bool get _canManage =>
+      RoleRouting.isStaffOrAdmin(context.read<AuthProvider>().user?.roleName);
 
   Future<void> _openForm(CafeTable? table) async {
     final lookups = context.read<AdminLookupsProvider>().lookups;
@@ -110,20 +110,20 @@ class _AdminTablesScreenState extends State<AdminTablesScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AdminTableProvider>();
-    final isAdmin = _isAdmin;
+    final canManage = _canManage;
     return Scaffold(
       appBar: AppBar(title: const Text(AppStrings.adminTablesTitle)),
-      floatingActionButton: isAdmin
+      floatingActionButton: canManage
           ? FloatingActionButton(
               onPressed: () => _openForm(null),
               child: const Icon(Icons.add),
             )
           : null,
-      body: CafeSurface(child: _buildBody(provider, isAdmin)),
+      body: CafeSurface(child: _buildBody(provider, canManage)),
     );
   }
 
-  Widget _buildBody(AdminTableProvider provider, bool isAdmin) {
+  Widget _buildBody(AdminTableProvider provider, bool canManage) {
     if (provider.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -172,7 +172,7 @@ class _AdminTablesScreenState extends State<AdminTablesScreen> {
                 const SizedBox(height: 8),
                 Align(
                   alignment: Alignment.centerRight,
-                  child: isAdmin
+                  child: canManage
                       ? Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
