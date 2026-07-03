@@ -224,7 +224,10 @@ void main() {
     expect(api.lastCreateOrderBody?['paymentMethod'],
         AppStrings.bankTransferPaymentMethod);
     expect(api.lastCreateOrderBody?['orderType'], AppStrings.takeAwayOrderType);
-    expect(find.text('ĐÃ_GỌI_PAYOS'), findsOneWidget);
+    expect(
+      find.text('Chưa thể xử lý thanh toán. Vui lòng thử lại sau.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('ReservationScreen guards the unauthenticated flow safely',

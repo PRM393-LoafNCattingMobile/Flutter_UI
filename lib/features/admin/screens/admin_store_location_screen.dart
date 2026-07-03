@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
+import 'package:loafncatting_mobile/core/errors/user_friendly_error.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/services/api_service.dart';
 import 'package:loafncatting_mobile/widgets/cafe_form_fields.dart';
@@ -79,10 +80,12 @@ class _AdminStoreLocationScreenState extends State<AdminStoreLocationScreen> {
     final body = {
       'storeName': nameController.text.trim(),
       'address': addressController.text.trim(),
-      'phoneNumber':
-          phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
-      'openingHours':
-          hoursController.text.trim().isEmpty ? null : hoursController.text.trim(),
+      'phoneNumber': phoneController.text.trim().isEmpty
+          ? null
+          : phoneController.text.trim(),
+      'openingHours': hoursController.text.trim().isEmpty
+          ? null
+          : hoursController.text.trim(),
       'latitude': double.parse(latitudeController.text.trim()),
       'longitude': double.parse(longitudeController.text.trim()),
     };
@@ -97,12 +100,12 @@ class _AdminStoreLocationScreenState extends State<AdminStoreLocationScreen> {
     } on ApiException catch (e) {
       setState(() {
         saving = false;
-        error = e.message;
+        error = friendlyErrorMessage(e);
       });
     } catch (e) {
       setState(() {
         saving = false;
-        error = e.toString();
+        error = friendlyErrorMessage(e);
       });
     }
   }
