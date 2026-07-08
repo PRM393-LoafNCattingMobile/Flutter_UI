@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
+import 'package:loafncatting_mobile/core/errors/user_friendly_error.dart';
 import 'package:loafncatting_mobile/features/admin/models/admin_models.dart';
 import 'package:loafncatting_mobile/features/admin/providers/admin_providers.dart';
 import 'package:loafncatting_mobile/models/models.dart';
+import 'package:loafncatting_mobile/services/image_upload_service.dart';
 import 'package:loafncatting_mobile/widgets/cafe_form_fields.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
 import 'package:provider/provider.dart';
@@ -33,7 +35,9 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
   int? categoryId;
   bool isAvailable = true;
   bool saving = false;
+  bool uploadingImage = false;
   String? error;
+  String? picturePreviewUrl;
 
   @override
   void initState() {
@@ -42,18 +46,19 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
     nameController = TextEditingController(text: product?.name ?? '');
     descriptionController =
         TextEditingController(text: product?.description ?? '');
-    priceController =
-        TextEditingController(text: product == null ? '' : _trim(product.price));
+    priceController = TextEditingController(
+        text: product == null ? '' : _trim(product.price));
     discountController = TextEditingController(
         text: product?.discountPrice == null
             ? ''
             : _trim(product!.discountPrice!));
     stockController = TextEditingController(
         text: product == null ? '' : product.unitInStock.toString());
-    pictureController = TextEditingController(text: product?.picture ?? '');
+    pictureController = TextEditingController(text: product?.pictureKey ?? '');
     categoryId = product?.categoryId ??
         (widget.categories.isNotEmpty ? widget.categories.first.id : null);
     isAvailable = product?.isAvailable ?? true;
+    picturePreviewUrl = product?.picture;
   }
 
   String _trim(double value) => value.toStringAsFixed(0);
@@ -107,6 +112,47 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
     }
   }
 
+  Future<void> _uploadPicture() async {
+    if (uploadingImage) return;
+
+    setState(() {
+      uploadingImage = true;
+      error = null;
+    });
+
+    try {
+      final uploadService =
+          ImageUploadService(context.read<AdminCatalogProvider>().api);
+      final uploaded =
+          await uploadService.pickAndUpload(MediaUploadType.product);
+      if (uploaded == null || !mounted) {
+        return;
+      }
+
+      setState(() {
+        pictureController.text = uploaded.s3Key;
+        picturePreviewUrl = uploaded.displayUrl;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(AppStrings.imageUploadSuccessMessage)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => error = friendlyErrorMessage(e));
+    } finally {
+      if (mounted) {
+        setState(() => uploadingImage = false);
+      }
+    }
+  }
+
+  void _clearPicture() {
+    setState(() {
+      pictureController.clear();
+      picturePreviewUrl = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -158,6 +204,56 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
               CafeTextFormField(
                 controller: pictureController,
                 labelText: AppStrings.productPictureLabel,
+                readOnly: true,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                AppStrings.imageUploadHint,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: Colors.grey.shade700),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 180,
+                child: CafeImageFrame(
+                  imageUrl: picturePreviewUrl,
+                  icon: Icons.inventory_2_outlined,
+                  label: nameController.text.trim().isEmpty
+                      ? AppStrings.productNameLabel
+                      : nameController.text.trim(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: uploadingImage ? null : _uploadPicture,
+                      icon: uploadingImage
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.cloud_upload_outlined),
+                      label: Text(
+                        pictureController.text.trim().isEmpty
+                            ? AppStrings.imageUploadButton
+                            : AppStrings.imageReplaceButton,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  TextButton.icon(
+                    onPressed: pictureController.text.trim().isEmpty
+                        ? null
+                        : _clearPicture,
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text(AppStrings.imageRemoveButton),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<int>(

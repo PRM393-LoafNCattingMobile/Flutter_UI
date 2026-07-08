@@ -148,7 +148,8 @@ ThemeData buildLoafTheme() {
           fontWeight: states.contains(WidgetState.selected)
               ? FontWeight.w800
               : FontWeight.w600,
-          fontSize: 12,
+          fontSize: 11,
+          height: 1.05,
         ),
       ),
       iconTheme: WidgetStateProperty.resolveWith(

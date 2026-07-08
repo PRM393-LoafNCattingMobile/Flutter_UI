@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
+import 'package:loafncatting_mobile/core/errors/user_friendly_error.dart';
 import 'package:loafncatting_mobile/features/admin/models/admin_models.dart';
 import 'package:loafncatting_mobile/features/admin/providers/admin_providers.dart';
 import 'package:loafncatting_mobile/features/admin/widgets/status_picker.dart';
+import 'package:loafncatting_mobile/services/image_upload_service.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:loafncatting_mobile/widgets/cafe_form_fields.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
@@ -160,13 +162,36 @@ class _UserCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final avatarUrl = resolveCafeMediaUrl(user.avatarUrl);
     return CafeCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(user.name, style: theme.textTheme.titleMedium),
-          Text('${user.email} - ${user.phoneNumber}',
-              style: theme.textTheme.bodySmall?.copyWith(color: loafMuted)),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: loafLightCream,
+                backgroundImage:
+                    avatarUrl == null ? null : NetworkImage(avatarUrl),
+                child: avatarUrl == null
+                    ? const Icon(Icons.person, color: loafOrange)
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(user.name, style: theme.textTheme.titleMedium),
+                    Text('${user.email} - ${user.phoneNumber}',
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: loafMuted)),
+                  ],
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -191,7 +216,8 @@ class _UserCard extends StatelessWidget {
               const SizedBox(width: 4),
               OutlinedButton.icon(
                 onPressed: onToggleActive,
-                icon: Icon(user.isActive ? Icons.lock_outline : Icons.lock_open),
+                icon:
+                    Icon(user.isActive ? Icons.lock_outline : Icons.lock_open),
                 label: Text(user.isActive
                     ? AppStrings.adminDeactivateAction
                     : AppStrings.adminActivateAction),
@@ -218,6 +244,10 @@ class _CreateStaffDialogState extends State<_CreateStaffDialog> {
   final phoneController = TextEditingController();
   final passwordController = TextEditingController();
   final addressController = TextEditingController();
+  bool uploadingAvatar = false;
+  String? avatarKey;
+  String? avatarPreviewUrl;
+  String? uploadError;
 
   @override
   void dispose() {
@@ -227,6 +257,45 @@ class _CreateStaffDialogState extends State<_CreateStaffDialog> {
     passwordController.dispose();
     addressController.dispose();
     super.dispose();
+  }
+
+  Future<void> _uploadAvatar() async {
+    if (uploadingAvatar) return;
+
+    setState(() {
+      uploadingAvatar = true;
+      uploadError = null;
+    });
+
+    try {
+      final uploadService =
+          ImageUploadService(context.read<AdminUserProvider>().api);
+      final uploaded =
+          await uploadService.pickAndUpload(MediaUploadType.avatar);
+      if (uploaded == null || !mounted) {
+        return;
+      }
+
+      setState(() {
+        avatarKey = uploaded.s3Key;
+        avatarPreviewUrl = uploaded.displayUrl;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => uploadError = friendlyErrorMessage(e));
+    } finally {
+      if (mounted) {
+        setState(() => uploadingAvatar = false);
+      }
+    }
+  }
+
+  void _clearAvatar() {
+    setState(() {
+      avatarKey = null;
+      avatarPreviewUrl = null;
+      uploadError = null;
+    });
   }
 
   @override
@@ -270,6 +339,67 @@ class _CreateStaffDialogState extends State<_CreateStaffDialog> {
                 controller: addressController,
                 labelText: AppStrings.adminStoreAddressLabel,
               ),
+              const SizedBox(height: 12),
+              Text(
+                AppStrings.profileAvatarSectionTitle,
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                AppStrings.imageUploadHint,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: loafMuted),
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: CircleAvatar(
+                  radius: 36,
+                  backgroundColor: loafLightCream,
+                  backgroundImage: avatarPreviewUrl == null
+                      ? null
+                      : NetworkImage(avatarPreviewUrl!),
+                  child: avatarPreviewUrl == null
+                      ? const Icon(Icons.person, size: 36, color: loafOrange)
+                      : null,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: uploadingAvatar ? null : _uploadAvatar,
+                      icon: uploadingAvatar
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.cloud_upload_outlined),
+                      label: Text(
+                        avatarKey == null
+                            ? AppStrings.imageUploadButton
+                            : AppStrings.imageReplaceButton,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  TextButton.icon(
+                    onPressed: avatarKey == null ? null : _clearAvatar,
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text(AppStrings.imageRemoveButton),
+                  ),
+                ],
+              ),
+              if (uploadError != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  uploadError!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
             ],
           ),
         ),
@@ -290,7 +420,7 @@ class _CreateStaffDialogState extends State<_CreateStaffDialog> {
               'address': addressController.text.trim().isEmpty
                   ? null
                   : addressController.text.trim(),
-              'avatarUrl': null,
+              'avatarUrl': avatarKey,
             });
           },
           child: const Text(AppStrings.adminSaveButton),

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
+import 'package:loafncatting_mobile/core/errors/user_friendly_error.dart';
 import 'package:loafncatting_mobile/features/admin/admin_routing.dart';
 import 'package:loafncatting_mobile/features/admin/models/admin_models.dart';
 import 'package:loafncatting_mobile/features/admin/providers/admin_providers.dart';
 import 'package:loafncatting_mobile/features/admin/widgets/status_picker.dart';
 import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
+import 'package:loafncatting_mobile/services/image_upload_service.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:loafncatting_mobile/widgets/cafe_form_fields.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
@@ -131,8 +133,18 @@ class _AdminCatsScreenState extends State<AdminCatsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const CafeIconBadge(icon: Icons.pets),
+                    SizedBox(
+                      width: 76,
+                      height: 76,
+                      child: CafeImageFrame(
+                        imageUrl: cat.picture,
+                        icon: Icons.pets,
+                        label: cat.name,
+                        borderRadius: 14,
+                      ),
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -145,9 +157,20 @@ class _AdminCatsScreenState extends State<AdminCatsScreen> {
                                   .textTheme
                                   .bodySmall
                                   ?.copyWith(color: loafMuted)),
+                          const SizedBox(height: 6),
+                          Text(
+                            cat.description ?? '',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: loafMuted),
+                          ),
                         ],
                       ),
                     ),
+                    const SizedBox(width: 8),
                     CafeInfoChip(label: cat.statusName),
                   ],
                 ),
@@ -231,7 +254,9 @@ class _AdminCatFormScreenState extends State<AdminCatFormScreen> {
   int? genderId;
   int? statusId;
   bool saving = false;
+  bool uploadingImage = false;
   String? error;
+  String? picturePreviewUrl;
 
   @override
   void initState() {
@@ -240,7 +265,7 @@ class _AdminCatFormScreenState extends State<AdminCatFormScreen> {
     nameController = TextEditingController(text: cat?.name ?? '');
     ageController = TextEditingController(text: cat?.age?.toString() ?? '');
     breedController = TextEditingController(text: cat?.breed ?? '');
-    pictureController = TextEditingController(text: cat?.picture ?? '');
+    pictureController = TextEditingController(text: cat?.pictureKey ?? '');
     descriptionController = TextEditingController(text: cat?.description ?? '');
     friendlinessController =
         TextEditingController(text: cat?.friendlinessRating?.toString() ?? '');
@@ -251,6 +276,7 @@ class _AdminCatFormScreenState extends State<AdminCatFormScreen> {
     genderId = lookupIdForName(widget.genders, cat?.genderName);
     statusId = lookupIdForName(widget.statuses, cat?.statusName) ??
         (widget.statuses.isNotEmpty ? widget.statuses.first.id : null);
+    picturePreviewUrl = cat?.picture;
   }
 
   @override
@@ -270,6 +296,46 @@ class _AdminCatFormScreenState extends State<AdminCatFormScreen> {
       text.trim().isEmpty ? null : int.tryParse(text.trim());
 
   String? _emptyOr(String text) => text.trim().isEmpty ? null : text.trim();
+
+  Future<void> _uploadPicture() async {
+    if (uploadingImage) return;
+
+    setState(() {
+      uploadingImage = true;
+      error = null;
+    });
+
+    try {
+      final uploadService =
+          ImageUploadService(context.read<AdminCatProvider>().api);
+      final uploaded = await uploadService.pickAndUpload(MediaUploadType.cat);
+      if (uploaded == null || !mounted) {
+        return;
+      }
+
+      setState(() {
+        pictureController.text = uploaded.s3Key;
+        picturePreviewUrl = uploaded.displayUrl;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(AppStrings.imageUploadSuccessMessage)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => error = friendlyErrorMessage(e));
+    } finally {
+      if (mounted) {
+        setState(() => uploadingImage = false);
+      }
+    }
+  }
+
+  void _clearPicture() {
+    setState(() {
+      pictureController.clear();
+      picturePreviewUrl = null;
+    });
+  }
 
   Future<void> _save() async {
     if (!(formKey.currentState?.validate() ?? false)) return;
@@ -369,6 +435,56 @@ class _AdminCatFormScreenState extends State<AdminCatFormScreen> {
               CafeTextFormField(
                 controller: pictureController,
                 labelText: AppStrings.catPictureLabel,
+                readOnly: true,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                AppStrings.imageUploadHint,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: Colors.grey.shade700),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 180,
+                child: CafeImageFrame(
+                  imageUrl: picturePreviewUrl,
+                  icon: Icons.pets,
+                  label: nameController.text.trim().isEmpty
+                      ? AppStrings.catNameLabel
+                      : nameController.text.trim(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: uploadingImage ? null : _uploadPicture,
+                      icon: uploadingImage
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.cloud_upload_outlined),
+                      label: Text(
+                        pictureController.text.trim().isEmpty
+                            ? AppStrings.imageUploadButton
+                            : AppStrings.imageReplaceButton,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  TextButton.icon(
+                    onPressed: pictureController.text.trim().isEmpty
+                        ? null
+                        : _clearPicture,
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text(AppStrings.imageRemoveButton),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               CafeTextFormField(

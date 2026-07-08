@@ -69,6 +69,7 @@ class AdminUser {
     required this.phoneNumber,
     this.address,
     this.avatarUrl,
+    this.avatarKey,
     required this.roleId,
     required this.roleName,
     required this.isActive,
@@ -83,6 +84,7 @@ class AdminUser {
   final String phoneNumber;
   final String? address;
   final String? avatarUrl;
+  final String? avatarKey;
   final int roleId;
   final String roleName;
   final bool isActive;
@@ -97,6 +99,7 @@ class AdminUser {
         phoneNumber: json['phoneNumber'],
         address: json['address'],
         avatarUrl: json['avatarUrl'],
+        avatarKey: json['avatarKey'],
         roleId: json['roleId'],
         roleName: json['roleName'],
         isActive: json['isActive'],

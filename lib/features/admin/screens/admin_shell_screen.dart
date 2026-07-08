@@ -37,7 +37,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       body: _screens[index],
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
-        height: 70,
+        height: 76,
+        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
         onDestinationSelected: (value) => setState(() => index = value),
         destinations: const [
           NavigationDestination(

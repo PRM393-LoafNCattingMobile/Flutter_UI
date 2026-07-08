@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:loafncatting_mobile/core/api_config.dart';
@@ -60,6 +61,15 @@ class ApiService {
 
   Future<dynamic> _put(String path, [Map<String, dynamic>? body]) async {
     final response = await _client.put(
+      _uri(path),
+      headers: await _headers(json: body != null),
+      body: body == null ? null : jsonEncode(body),
+    );
+    return _decode(response);
+  }
+
+  Future<dynamic> _patch(String path, [Map<String, dynamic>? body]) async {
+    final response = await _client.patch(
       _uri(path),
       headers: await _headers(json: body != null),
       body: body == null ? null : jsonEncode(body),
@@ -142,6 +152,11 @@ class ApiService {
 
   Future<void> logout() async {
     await _post('/auth/logout', const {});
+  }
+
+  Future<AuthUser> updateAvatar(String? s3Key) async {
+    final data = await _patch('/auth/avatar', {'s3Key': s3Key});
+    return AuthUser.fromJson(data);
   }
 
   Future<List<Category>> getCategories() async {
@@ -277,13 +292,15 @@ class ApiService {
   Future<List<AdminConversationSummary>> getAdminConversations() async {
     final data = await _get('/staff/conversations') as List;
     return data
-        .map((item) =>
-            AdminConversationSummary.fromJson(Map<String, dynamic>.from(item as Map)))
+        .map((item) => AdminConversationSummary.fromJson(
+            Map<String, dynamic>.from(item as Map)))
         .toList();
   }
 
-  Future<List<ChatMessage>> getAdminConversationMessages(int conversationId) async {
-    final data = await _get('/staff/conversations/$conversationId/messages') as List;
+  Future<List<ChatMessage>> getAdminConversationMessages(
+      int conversationId) async {
+    final data =
+        await _get('/staff/conversations/$conversationId/messages') as List;
     return data.map((item) => ChatMessage.fromJson(item)).toList();
   }
 
@@ -309,7 +326,8 @@ class ApiService {
   }
 
   // ========== Admin: Products ==========
-  Future<List<Product>> getAdminProducts({int? categoryId, String? search}) async {
+  Future<List<Product>> getAdminProducts(
+      {int? categoryId, String? search}) async {
     final data = await _get('/admin/products', {
       'categoryId': categoryId?.toString(),
       'search': search,
@@ -357,7 +375,8 @@ class ApiService {
     return Category.fromJson(data);
   }
 
-  Future<Category> updateAdminCategory(int id, Map<String, dynamic> body) async {
+  Future<Category> updateAdminCategory(
+      int id, Map<String, dynamic> body) async {
     final data = await _put('/admin/categories/$id', body);
     return Category.fromJson(data);
   }
@@ -479,5 +498,74 @@ class ApiService {
   Future<StoreLocation> updateStoreLocation(Map<String, dynamic> body) async {
     final data = await _put('/admin/store-location', body);
     return StoreLocation.fromJson(data);
+  }
+
+  Future<PresignedUploadTarget> createAvatarUploadUrl({
+    required String fileName,
+    required String contentType,
+    required int fileSizeBytes,
+  }) async =>
+      _createUploadUrl(
+        '/uploads/avatar',
+        fileName: fileName,
+        contentType: contentType,
+        fileSizeBytes: fileSizeBytes,
+      );
+
+  Future<PresignedUploadTarget> createProductUploadUrl({
+    required String fileName,
+    required String contentType,
+    required int fileSizeBytes,
+  }) async =>
+      _createUploadUrl(
+        '/uploads/product',
+        fileName: fileName,
+        contentType: contentType,
+        fileSizeBytes: fileSizeBytes,
+      );
+
+  Future<PresignedUploadTarget> createCatUploadUrl({
+    required String fileName,
+    required String contentType,
+    required int fileSizeBytes,
+  }) async =>
+      _createUploadUrl(
+        '/uploads/cat',
+        fileName: fileName,
+        contentType: contentType,
+        fileSizeBytes: fileSizeBytes,
+      );
+
+  Future<void> uploadFileToPresignedUrl(
+    String uploadUrl,
+    Uint8List bytes, {
+    required String contentType,
+  }) async {
+    final response = await _client.put(
+      Uri.parse(uploadUrl),
+      headers: {'Content-Type': contentType},
+      body: bytes,
+    );
+    if (response.statusCode >= 400) {
+      throw ApiException(
+        _extractErrorMessage(utf8.decode(response.bodyBytes)) ??
+            'Tải ảnh thất bại',
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
+  Future<PresignedUploadTarget> _createUploadUrl(
+    String path, {
+    required String fileName,
+    required String contentType,
+    required int fileSizeBytes,
+  }) async {
+    final data = await _post(path, {
+      'fileName': fileName,
+      'contentType': contentType,
+      'fileSizeBytes': fileSizeBytes,
+    });
+    return PresignedUploadTarget.fromJson(data);
   }
 }

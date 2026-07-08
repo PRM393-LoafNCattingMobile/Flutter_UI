@@ -42,6 +42,11 @@ class AppStrings {
   static const profileTitle = 'Hồ sơ';
   static const profileGuestTitle = 'Khách của quán';
   static const profileGuestSubtitle = "Thành viên Loaf n' Catting";
+  static const profileAvatarSectionTitle = 'Ảnh đại diện';
+  static const profileAvatarSectionSubtitle =
+      'Tải ảnh JPG/PNG tối đa 1 MB để cập nhật hồ sơ.';
+  static const profileAvatarUploadButton = 'Cập nhật ảnh đại diện';
+  static const profileAvatarUpdatedMessage = 'Đã cập nhật ảnh đại diện.';
   static const logoutButton = 'Đăng xuất';
 
   static const homeNavLabel = 'Trang chủ';
@@ -230,7 +235,7 @@ class AppStrings {
   static const productPriceLabel = 'Giá';
   static const productDiscountPriceLabel = 'Giá khuyến mãi';
   static const productStockLabel = 'Tồn kho';
-  static const productPictureLabel = 'Ảnh (đường dẫn)';
+  static const productPictureLabel = 'Ảnh (S3 key)';
   static const productCategoryLabel = 'Danh mục';
   static const productAvailableLabel = 'Đang bán';
 
@@ -241,7 +246,7 @@ class AppStrings {
   static const catAgeLabel = 'Tuổi';
   static const catGenderLabel = 'Giới tính';
   static const catBreedLabel = 'Giống';
-  static const catPictureLabel = 'Ảnh (đường dẫn)';
+  static const catPictureLabel = 'Ảnh (S3 key)';
   static const catDescriptionLabel = 'Mô tả';
   static const catFriendlinessLabel = 'Thân thiện (1-5)';
   static const catCutenessLabel = 'Đáng yêu (1-5)';
@@ -256,6 +261,12 @@ class AppStrings {
 
   static const adminFieldRequiredMessage = 'Không được để trống';
   static const adminInvalidNumberMessage = 'Giá trị không hợp lệ';
+  static const imageUploadHint = 'Chỉ hỗ trợ JPG/PNG, tối đa 1 MB.';
+  static const imageUploadButton = 'Tải ảnh lên';
+  static const imageReplaceButton = 'Đổi ảnh';
+  static const imageRemoveButton = 'Xóa ảnh';
+  static const imageUploadSuccessMessage = 'Đã tải ảnh lên S3.';
+  static const imageUploadFailedMessage = 'Tải ảnh thất bại.';
 
   // Admin/Staff - Dashboard, Users, Store, More (Task 12).
   static const adminDashboardPendingOrders = 'Đơn chờ xử lý';

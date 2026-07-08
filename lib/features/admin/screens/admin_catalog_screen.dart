@@ -181,28 +181,54 @@ class _ProductCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              SizedBox(
+                width: 76,
+                height: 76,
+                child: CafeImageFrame(
+                  imageUrl: product.picture,
+                  icon: Icons.inventory_2_outlined,
+                  label: product.name,
+                  borderRadius: 14,
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
-                  child: Text(product.name,
-                      style: theme.textTheme.titleMedium)),
-              Text(money(product.displayPrice),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(product.name, style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 4),
+                    Text(product.categoryName,
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: loafMuted)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        CafeInfoChip(
+                            label: AppStrings.stockCountLabel(
+                                product.unitInStock)),
+                        CafeInfoChip(
+                            label: product.isAvailable
+                                ? AppStrings.inStockLabel
+                                : AppStrings.outOfStockLabel),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  money(product.displayPrice),
+                  textAlign: TextAlign.right,
                   style: moneyTextStyle(theme.textTheme.titleMedium,
-                      color: loafOrange, fontWeight: FontWeight.w800)),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(product.categoryName,
-              style: theme.textTheme.bodySmall?.copyWith(color: loafMuted)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              CafeInfoChip(label: AppStrings.stockCountLabel(product.unitInStock)),
-              CafeInfoChip(
-                  label: product.isAvailable
-                      ? AppStrings.inStockLabel
-                      : AppStrings.outOfStockLabel),
+                      color: loafOrange, fontWeight: FontWeight.w800),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),

@@ -56,8 +56,7 @@ class AuthProvider extends LoadableProvider {
     await run(() async {
       user = await api.login(login, password);
       pendingVerification = null;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('authUser', jsonEncode(user!.toJson()));
+      await _persistUser();
     });
     return error == null;
   }
@@ -85,8 +84,7 @@ class AuthProvider extends LoadableProvider {
     await run(() async {
       user = await api.verifyEmail(challenge.email, verificationCode);
       pendingVerification = null;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('authUser', jsonEncode(user!.toJson()));
+      await _persistUser();
     });
     return error == null;
   }
@@ -117,6 +115,30 @@ class AuthProvider extends LoadableProvider {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('authUser');
     notifyListeners();
+  }
+
+  Future<bool> updateAvatar(String? s3Key) async {
+    if (user == null) {
+      error = 'Vui lòng đăng nhập để cập nhật ảnh đại diện.';
+      notifyListeners();
+      return false;
+    }
+
+    await run(() async {
+      user = await api.updateAvatar(s3Key);
+      await _persistUser();
+    });
+    return error == null;
+  }
+
+  Future<void> _persistUser() async {
+    final currentUser = user;
+    if (currentUser == null) {
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('authUser', jsonEncode(currentUser.toJson()));
   }
 }
 
