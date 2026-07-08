@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/constants/app_routes.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
+import 'package:loafncatting_mobile/core/errors/user_friendly_error.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/screens/payment_webview_screen.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
@@ -215,7 +216,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (!mounted) return;
       Navigator.pop(context);
     } catch (e) {
-      setState(() => error = e.toString());
+      setState(() => error = friendlyErrorMessage(e));
     } finally {
       if (mounted) {
         setState(() => placing = false);

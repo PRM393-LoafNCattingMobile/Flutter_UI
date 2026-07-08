@@ -1,13 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/constants/app_routes.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
+import 'package:loafncatting_mobile/core/errors/user_friendly_error.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
+import 'package:loafncatting_mobile/services/image_upload_service.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
 import 'package:provider/provider.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  bool _uploadingAvatar = false;
+
+  Future<void> _updateAvatar(AuthProvider auth) async {
+    if (auth.user == null || _uploadingAvatar) return;
+
+    setState(() => _uploadingAvatar = true);
+    try {
+      final uploadService = ImageUploadService(auth.api);
+      final uploaded =
+          await uploadService.pickAndUpload(MediaUploadType.avatar);
+      if (uploaded == null || !mounted) {
+        return;
+      }
+
+      final ok = await auth.updateAvatar(uploaded.s3Key);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ok
+              ? AppStrings.profileAvatarUpdatedMessage
+              : (auth.error ?? AppStrings.imageUploadFailedMessage)),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(friendlyErrorMessage(e))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _uploadingAvatar = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +67,50 @@ class ProfileScreen extends StatelessWidget {
                   ? AppStrings.profileGuestSubtitle
                   : AppStrings.localizedRoleName(user.roleName),
               icon: Icons.person,
+              trailing: _ProfileAvatar(url: user?.avatarUrl),
             ),
+            if (user != null)
+              CafeCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AppStrings.profileAvatarSectionTitle,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      AppStrings.profileAvatarSectionSubtitle,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: loafMuted),
+                    ),
+                    const SizedBox(height: 14),
+                    Center(
+                      child: _ProfileAvatar(
+                        url: user.avatarUrl,
+                        radius: 44,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    FilledButton.icon(
+                      onPressed: _uploadingAvatar || auth.isLoading
+                          ? null
+                          : () => _updateAvatar(auth),
+                      icon: _uploadingAvatar
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.cloud_upload_outlined),
+                      label: const Text(AppStrings.profileAvatarUploadButton),
+                    ),
+                  ],
+                ),
+              ),
+            if (user != null) const SizedBox(height: 18),
             CafeCard(
               child: Column(
                 children: [
@@ -64,6 +149,26 @@ class ProfileScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ProfileAvatar extends StatelessWidget {
+  const _ProfileAvatar({required this.url, this.radius = 24});
+
+  final String? url;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    final resolved = resolveCafeMediaUrl(url);
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: loafLightCream,
+      backgroundImage: resolved == null ? null : NetworkImage(resolved),
+      child: resolved == null
+          ? Icon(Icons.person, size: radius, color: loafOrange)
+          : null,
     );
   }
 }

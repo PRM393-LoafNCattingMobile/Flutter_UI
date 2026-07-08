@@ -42,6 +42,11 @@ class AppStrings {
   static const profileTitle = 'Hồ sơ';
   static const profileGuestTitle = 'Khách của quán';
   static const profileGuestSubtitle = "Thành viên Loaf n' Catting";
+  static const profileAvatarSectionTitle = 'Ảnh đại diện';
+  static const profileAvatarSectionSubtitle =
+      'Tải ảnh JPG/PNG tối đa 1 MB để cập nhật hồ sơ.';
+  static const profileAvatarUploadButton = 'Cập nhật ảnh đại diện';
+  static const profileAvatarUpdatedMessage = 'Đã cập nhật ảnh đại diện.';
   static const logoutButton = 'Đăng xuất';
 
   static const homeNavLabel = 'Trang chủ';
@@ -166,6 +171,142 @@ class AppStrings {
   static const similarItemsTitle = 'Món tương tự';
   static const retryButton = 'Thử lại';
   static const unknownBreed = 'Chưa rõ giống';
+
+  // Admin/Staff shell (Task 8 - mobile admin foundation).
+  static const adminDashboardNavLabel = 'Tổng quan';
+  static const adminOrdersNavLabel = 'Đơn hàng';
+  static const adminReservationsNavLabel = 'Đặt bàn';
+  static const adminCatalogNavLabel = 'Thực đơn';
+  static const adminCatsNavLabel = 'Mèo';
+  static const adminChatNavLabel = 'Chat';
+  static const adminMoreNavLabel = 'Thêm';
+
+  static const adminDashboardTitle = 'Tổng quan';
+  static const adminOrdersTitle = 'Quản lý đơn hàng';
+  static const adminReservationsTitle = 'Quản lý đặt bàn';
+  static const adminCatalogTitle = 'Quản lý thực đơn';
+  static const adminCatsTitle = 'Quản lý mèo';
+  static const adminMoreTitle = 'Khác';
+
+  static const adminComingSoonMessage = 'Tính năng đang được hoàn thiện.';
+
+  // Admin/Staff - Orders & Reservations (Task 10).
+  static const adminOrdersEmptyMessage = 'Chưa có đơn hàng nào.';
+  static const adminReservationsEmptyMessage = 'Chưa có lượt đặt bàn nào.';
+  static const adminFilterAllStatuses = 'Tất cả trạng thái';
+  static const adminFilterByStatusLabel = 'Lọc theo trạng thái';
+  static const adminUpdateStatusButton = 'Cập nhật trạng thái';
+  static const adminUpdateStatusTitle = 'Chọn trạng thái mới';
+  static const adminStatusUpdatedMessage = 'Đã cập nhật trạng thái.';
+  static const adminPaymentStatusPrefix = 'Thanh toán: ';
+  static String adminOrderCodeLabel(int id) => 'Đơn #$id';
+  static String adminOrderCustomerLabel(String name) => 'Khách: $name';
+  static String adminReservationGuestLabel(String name, String phone) =>
+      '$name - $phone';
+
+  // Admin/Staff - Catalog, Cats, Tables (Task 11).
+  static const adminCatalogEmptyMessage = 'Chưa có sản phẩm nào.';
+  static const adminCatsEmptyMessage = 'Chưa có bé mèo nào.';
+  static const adminTablesEmptyMessage = 'Chưa có bàn nào.';
+  static const adminManageCategoriesTitle = 'Quản lý danh mục';
+  static const adminCategoriesEmptyMessage = 'Chưa có danh mục nào.';
+  static const adminTablesTitle = 'Quản lý bàn';
+
+  static const adminAddProductTitle = 'Thêm sản phẩm';
+  static const adminEditProductTitle = 'Sửa sản phẩm';
+  static const adminAddCategoryTitle = 'Thêm danh mục';
+  static const adminEditCategoryTitle = 'Sửa danh mục';
+  static const adminAddCatTitle = 'Thêm mèo';
+  static const adminEditCatTitle = 'Sửa hồ sơ mèo';
+  static const adminAddTableTitle = 'Thêm bàn';
+  static const adminEditTableTitle = 'Sửa bàn';
+
+  static const adminUpdateStockTitle = 'Cập nhật tồn kho';
+  static const adminSaveButton = 'Lưu';
+  static const adminDeleteButton = 'Xóa';
+  static const adminDeleteConfirmTitle = 'Xác nhận xóa';
+  static const adminDeleteConfirmMessage = 'Bạn có chắc muốn xóa mục này?';
+  static const adminCancelButton = 'Hủy';
+  static const adminSavedMessage = 'Đã lưu.';
+  static const adminDeletedMessage = 'Đã xóa.';
+
+  static const productNameLabel = 'Tên sản phẩm';
+  static const productDescriptionLabel = 'Mô tả';
+  static const productPriceLabel = 'Giá';
+  static const productDiscountPriceLabel = 'Giá khuyến mãi';
+  static const productStockLabel = 'Tồn kho';
+  static const productPictureLabel = 'Ảnh (S3 key)';
+  static const productCategoryLabel = 'Danh mục';
+  static const productAvailableLabel = 'Đang bán';
+
+  static const categoryNameLabel = 'Tên danh mục';
+  static const categoryDescriptionLabel = 'Mô tả';
+
+  static const catNameLabel = 'Tên mèo';
+  static const catAgeLabel = 'Tuổi';
+  static const catGenderLabel = 'Giới tính';
+  static const catBreedLabel = 'Giống';
+  static const catPictureLabel = 'Ảnh (S3 key)';
+  static const catDescriptionLabel = 'Mô tả';
+  static const catFriendlinessLabel = 'Thân thiện (1-5)';
+  static const catCutenessLabel = 'Đáng yêu (1-5)';
+  static const catPlayfulnessLabel = 'Tinh nghịch (1-5)';
+  static const catStatusLabel = 'Trạng thái';
+
+  static const tableNameLabel = 'Tên bàn';
+  static const tableCapacityLabel = 'Sức chứa';
+  static const tableAreaLabel = 'Khu vực';
+  static const tableDescriptionLabel = 'Mô tả';
+  static const tableStatusLabel = 'Trạng thái';
+
+  static const adminFieldRequiredMessage = 'Không được để trống';
+  static const adminInvalidNumberMessage = 'Giá trị không hợp lệ';
+  static const imageUploadHint = 'Chỉ hỗ trợ JPG/PNG, tối đa 1 MB.';
+  static const imageUploadButton = 'Tải ảnh lên';
+  static const imageReplaceButton = 'Đổi ảnh';
+  static const imageRemoveButton = 'Xóa ảnh';
+  static const imageUploadSuccessMessage = 'Đã tải ảnh lên S3.';
+  static const imageUploadFailedMessage = 'Tải ảnh thất bại.';
+
+  // Admin/Staff - Dashboard, Users, Store, More (Task 12).
+  static const adminDashboardPendingOrders = 'Đơn chờ xử lý';
+  static const adminDashboardTodayReservations = 'Đặt bàn hôm nay';
+  static const adminDashboardLowStock = 'Sản phẩm sắp hết';
+  static const adminDashboardCatsNotWorking = 'Mèo nghỉ/ốm';
+
+  static const adminUsersTitle = 'Quản lý người dùng';
+  static const adminUsersEmptyMessage = 'Chưa có người dùng nào.';
+  static const adminUsersSearchHint = 'Tìm theo tên/email/SĐT';
+  static const adminCreateStaffTitle = 'Tạo nhân viên';
+  static const adminChangeRoleTitle = 'Đổi vai trò';
+  static const adminUserActiveLabel = 'Đang hoạt động';
+  static const adminUserInactiveLabel = 'Đã khóa';
+  static const adminActivateAction = 'Kích hoạt';
+  static const adminDeactivateAction = 'Khóa';
+  static const adminChangeRoleAction = 'Đổi vai trò';
+
+  static const adminStoreLocationTitle = 'Vị trí cửa hàng';
+  static const adminStoreNameLabel = 'Tên cửa hàng';
+  static const adminStoreAddressLabel = 'Địa chỉ';
+  static const adminStorePhoneLabel = 'Số điện thoại';
+  static const adminStoreHoursLabel = 'Giờ mở cửa';
+  static const adminStoreLatitudeLabel = 'Vĩ độ (latitude)';
+  static const adminStoreLongitudeLabel = 'Kinh độ (longitude)';
+
+  static const adminMoreManageTables = 'Quản lý bàn';
+  static const adminMoreManageUsers = 'Quản lý người dùng';
+  static const adminMoreStoreLocation = 'Cập nhật vị trí cửa hàng';
+  static const adminMoreChat = 'Trò chuyện với khách';
+  static const adminChatComingSoon = 'Tính năng chat sẽ sớm có mặt.';
+  static const adminChatTitle = 'Hộp thư khách hàng';
+  static const adminChatEmptyMessage = 'Chưa có cuộc trò chuyện nào.';
+  static const adminChatSubtitle =
+      'Theo dõi tin nhắn mới và phản hồi khách hàng theo thời gian thực.';
+  static const adminChatThreadSubtitle =
+      'Trao đổi hỗ trợ trực tiếp với khách hàng.';
+  static const adminChatComposerHint = 'Nhập phản hồi cho khách hàng';
+  static const adminChatCustomerLabel = 'Khách hàng';
+  static const adminChatStoreLabel = 'Hỗ trợ';
 
   static String localizedRoleName(String roleName) {
     switch (roleName.trim().toLowerCase()) {

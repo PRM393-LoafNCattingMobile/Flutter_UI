@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/errors/user_friendly_error.dart';
+import 'package:loafncatting_mobile/features/chat/services/chat_realtime_service.dart';
 import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,7 +26,7 @@ class LoadableProvider extends ChangeNotifier {
     try {
       await action();
     } catch (e) {
-      error = e.toString();
+      error = friendlyErrorMessage(e);
     } finally {
       isLoading = false;
       notifyListeners();
@@ -53,8 +56,7 @@ class AuthProvider extends LoadableProvider {
     await run(() async {
       user = await api.login(login, password);
       pendingVerification = null;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('authUser', jsonEncode(user!.toJson()));
+      await _persistUser();
     });
     return error == null;
   }
@@ -82,8 +84,7 @@ class AuthProvider extends LoadableProvider {
     await run(() async {
       user = await api.verifyEmail(challenge.email, verificationCode);
       pendingVerification = null;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('authUser', jsonEncode(user!.toJson()));
+      await _persistUser();
     });
     return error == null;
   }
@@ -114,6 +115,30 @@ class AuthProvider extends LoadableProvider {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('authUser');
     notifyListeners();
+  }
+
+  Future<bool> updateAvatar(String? s3Key) async {
+    if (user == null) {
+      error = 'Vui lòng đăng nhập để cập nhật ảnh đại diện.';
+      notifyListeners();
+      return false;
+    }
+
+    await run(() async {
+      user = await api.updateAvatar(s3Key);
+      await _persistUser();
+    });
+    return error == null;
+  }
+
+  Future<void> _persistUser() async {
+    final currentUser = user;
+    if (currentUser == null) {
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('authUser', jsonEncode(currentUser.toJson()));
   }
 }
 
@@ -150,9 +175,8 @@ class CatalogProvider extends LoadableProvider {
       return _minimumMenuPriceCeiling;
     }
 
-    final highestPrice = source
-        .map((product) => product.displayPrice)
-        .fold<double>(0, math.max);
+    final highestPrice =
+        source.map((product) => product.displayPrice).fold<double>(0, math.max);
     final roundedCeiling =
         (highestPrice / _menuPriceStep).ceil() * _menuPriceStep;
     return math.max(_minimumMenuPriceCeiling, roundedCeiling.toDouble());
@@ -168,8 +192,7 @@ class CatalogProvider extends LoadableProvider {
       math.max(_rawClampedMinPrice, _rawClampedMaxPrice);
 
   bool get hasPriceFilter =>
-      priceFilterMin > priceFilterFloor ||
-      priceFilterMax < priceFilterCeiling;
+      priceFilterMin > priceFilterFloor || priceFilterMax < priceFilterCeiling;
 
   List<Product> get products {
     Iterable<Product> filtered = _products;
@@ -409,15 +432,16 @@ class CartProvider extends ChangeNotifier {
       );
     } on ApiException catch (e) {
       _replaceItems(rollbackItems, notify: false);
-      error = e.toString();
+      error = friendlyErrorMessage(e);
       final status = _statusForCartAddError(e);
-      return CartAddResult(status: status, message: e.message);
+      return CartAddResult(status: status, message: friendlyErrorMessage(e));
     } catch (e) {
       _replaceItems(rollbackItems, notify: false);
-      error = e.toString();
+      final message = friendlyErrorMessage(e);
+      error = message;
       return CartAddResult(
         status: CartAddStatus.syncFailed,
-        message: e.toString(),
+        message: message,
       );
     } finally {
       isSyncing = false;
@@ -547,7 +571,7 @@ class CartProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       _replaceItems(rollbackItems, notify: false);
-      error = e.toString();
+      error = friendlyErrorMessage(e);
       return false;
     } finally {
       isSyncing = false;
@@ -650,15 +674,39 @@ class LocationProvider extends LoadableProvider {
 }
 
 class ChatProvider extends LoadableProvider {
-  ChatProvider(this.api);
+  ChatProvider(this.api, {ChatRealtimeService? realtime})
+      : _realtime = realtime ?? ChatRealtimeService();
   final ApiService api;
+  final ChatRealtimeService _realtime;
   Conversation? conversation;
   List<ChatMessage> messages = [];
+  StreamSubscription<List<ChatMessage>>? _threadSubscription;
 
   Future<void> load(int userId) async => run(() async {
         conversation = await api.getConversation(userId);
+        messages = [];
         messages = await api.getMessages(conversation!.conversationId);
+        await _threadSubscription?.cancel();
+        _threadSubscription = _realtime.threadUpdates.listen((items) {
+          if (items.isEmpty) {
+            return;
+          }
+          if (items.first.conversationId != conversation?.conversationId) {
+            return;
+          }
+          messages = items;
+          notifyListeners();
+        });
+        unawaited(_joinConversationSafely(conversation!.conversationId));
       });
+
+  Future<void> _joinConversationSafely(int conversationId) async {
+    try {
+      await _realtime.joinConversation(conversationId);
+    } catch (_) {
+      // Customer chat should still work in polling/API mode if realtime is down.
+    }
+  }
 
   Future<void> send(int userId, String content) async => run(() async {
         conversation ??= await api.getConversation(userId);
@@ -670,7 +718,17 @@ class ChatProvider extends LoadableProvider {
     resetLoadState();
     conversation = null;
     messages = [];
+    _threadSubscription?.cancel();
+    _threadSubscription = null;
+    _realtime.stop();
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _threadSubscription?.cancel();
+    _realtime.dispose();
+    super.dispose();
   }
 }
 

@@ -6,6 +6,7 @@ class AuthUser {
     required this.phoneNumber,
     required this.roleName,
     required this.token,
+    this.avatarUrl,
   });
 
   final int userId;
@@ -14,6 +15,7 @@ class AuthUser {
   final String phoneNumber;
   final String roleName;
   final String token;
+  final String? avatarUrl;
 
   factory AuthUser.fromJson(Map<String, dynamic> json) => AuthUser(
         userId: json['userId'],
@@ -22,6 +24,7 @@ class AuthUser {
         phoneNumber: json['phoneNumber'],
         roleName: json['roleName'],
         token: json['token'],
+        avatarUrl: json['avatarUrl'],
       );
 
   Map<String, dynamic> toJson() => {
@@ -31,6 +34,7 @@ class AuthUser {
         'phoneNumber': phoneNumber,
         'roleName': roleName,
         'token': token,
+        'avatarUrl': avatarUrl,
       };
 }
 
@@ -77,6 +81,7 @@ class Product {
     required this.categoryName,
     required this.isAvailable,
     bool? canOrder,
+    this.pictureKey,
   }) : canOrder = canOrder ?? (isAvailable && unitInStock > 0);
 
   final int productId;
@@ -90,6 +95,7 @@ class Product {
   final String categoryName;
   final bool isAvailable;
   final bool canOrder;
+  final String? pictureKey;
 
   double get displayPrice => discountPrice ?? price;
 
@@ -105,6 +111,7 @@ class Product {
         categoryName: json['categoryName'],
         isAvailable: json['isAvailable'],
         canOrder: json['canOrder'] as bool?,
+        pictureKey: json['pictureKey'],
       );
 }
 
@@ -121,6 +128,7 @@ class Cat {
     this.cutenessRating,
     this.playfulnessRating,
     required this.statusName,
+    this.pictureKey,
   });
 
   final int catId;
@@ -134,6 +142,7 @@ class Cat {
   final int? cutenessRating;
   final int? playfulnessRating;
   final String statusName;
+  final String? pictureKey;
 
   factory Cat.fromJson(Map<String, dynamic> json) => Cat(
         catId: json['catId'],
@@ -147,6 +156,29 @@ class Cat {
         cutenessRating: json['cutenessRating'],
         playfulnessRating: json['playfulnessRating'],
         statusName: json['statusName'],
+        pictureKey: json['pictureKey'],
+      );
+}
+
+class PresignedUploadTarget {
+  PresignedUploadTarget({
+    required this.uploadUrl,
+    required this.s3Key,
+    required this.fileUrl,
+    required this.expiresAtUtc,
+  });
+
+  final String uploadUrl;
+  final String s3Key;
+  final String fileUrl;
+  final DateTime expiresAtUtc;
+
+  factory PresignedUploadTarget.fromJson(Map<String, dynamic> json) =>
+      PresignedUploadTarget(
+        uploadUrl: json['uploadUrl'],
+        s3Key: json['s3Key'],
+        fileUrl: json['fileUrl'],
+        expiresAtUtc: DateTime.parse(json['expiresAtUtc']),
       );
 }
 
