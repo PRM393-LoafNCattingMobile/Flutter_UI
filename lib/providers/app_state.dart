@@ -650,7 +650,10 @@ class NotificationProvider extends LoadableProvider {
   final NotificationRealtimeService _realtime;
   List<AppNotification> notifications = [];
   StreamSubscription<AppNotification>? _createdSubscription;
+  final _popupController = StreamController<AppNotification>.broadcast();
   int? _activeRealtimeUserId;
+
+  Stream<AppNotification> get popupNotifications => _popupController.stream;
 
   int get unreadCount =>
       notifications.where((notification) => !notification.isRead).length;
@@ -675,6 +678,7 @@ class NotificationProvider extends LoadableProvider {
       } else {
         notifications.insert(0, notification);
       }
+      _popupController.add(notification);
       notifyListeners();
     });
 
@@ -707,6 +711,7 @@ class NotificationProvider extends LoadableProvider {
   @override
   void dispose() {
     _createdSubscription?.cancel();
+    _popupController.close();
     _realtime.dispose();
     super.dispose();
   }

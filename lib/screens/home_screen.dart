@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
+import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/screens/cat_gallery_screen.dart';
 import 'package:loafncatting_mobile/screens/menu_screen.dart';
 import 'package:loafncatting_mobile/screens/more_screen.dart';
+import 'package:loafncatting_mobile/screens/notifications_screen.dart';
 import 'package:loafncatting_mobile/screens/profile_screen.dart';
 import 'package:loafncatting_mobile/screens/reservation_screen.dart';
 import 'package:provider/provider.dart';
@@ -19,6 +21,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int index = 1;
+  StreamSubscription<AppNotification>? _notificationPopupSubscription;
   final screens = const [
     MoreScreen(),
     MenuScreen(),
@@ -36,9 +39,38 @@ class _HomeScreenState extends State<HomeScreen> {
       final notifications = _maybeProvider<NotificationProvider>(context);
       final user = auth?.user;
       if (user == null || notifications == null) return;
+      _notificationPopupSubscription ??=
+          notifications.popupNotifications.listen(_showNotificationPopup);
       unawaited(notifications.load(user.userId));
       unawaited(notifications.startRealtime(user.userId));
     });
+  }
+
+  void _showNotificationPopup(AppNotification notification) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(
+          '${notification.title}\n${notification.content}',
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+        ),
+        action: SnackBarAction(
+          label: 'Xem',
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _notificationPopupSubscription?.cancel();
+    super.dispose();
   }
 
   @override

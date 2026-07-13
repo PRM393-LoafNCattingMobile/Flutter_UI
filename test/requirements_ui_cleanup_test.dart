@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loafncatting_mobile/core/constants/app_routes.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
+import 'package:loafncatting_mobile/features/admin/models/admin_models.dart';
 import 'package:loafncatting_mobile/main.dart';
 import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
@@ -699,8 +700,20 @@ class _FakeApiService extends ApiService {
   Future<Map<String, dynamic>> createOrder(Map<String, dynamic> body) async {
     createOrderCallCount += 1;
     lastCreateOrderBody = body;
-    return {'orderId': 99};
+    return {
+      'orderId': 99,
+      'orderDate': '2026-06-30T10:00:00',
+      'totalPrice': 55000,
+      'customerUserId': body['userId'],
+      'statusName': 'Đang chờ',
+      'paymentStatus': 'Đang chờ thanh toán',
+      'items': const [],
+      'customerName': 'Lan',
+    };
   }
+
+  @override
+  Future<Order?> getPendingPaymentOrder(int userId) async => null;
 
   @override
   Future<Map<String, dynamic>> createPaymentLink(int orderId) async {

@@ -208,6 +208,11 @@ class ApiService {
     return data as Map<String, dynamic>;
   }
 
+  Future<Order?> getPendingPaymentOrder(int userId) async {
+    final data = await _get('/orders/user/$userId/pending-payment');
+    return data == null ? null : Order.fromJson(data);
+  }
+
   Future<List<CartItem>> getCart(int userId) async {
     final data = await _get('/carts/user/$userId');
     return _cartItemsFromResponse(data);
