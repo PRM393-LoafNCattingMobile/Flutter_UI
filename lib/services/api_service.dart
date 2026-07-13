@@ -447,6 +447,11 @@ class ApiService {
     return data.map((item) => Order.fromJson(item)).toList();
   }
 
+  Future<Order> getStaffOrder(int id) async {
+    final data = await _get('/staff/orders/$id');
+    return Order.fromJson(data);
+  }
+
   Future<Order> updateOrderStatus(int id, int statusId) async {
     final data = await _put('/staff/orders/$id/status', {'statusId': statusId});
     return Order.fromJson(data);

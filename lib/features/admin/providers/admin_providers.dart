@@ -172,6 +172,7 @@ class StaffOrderProvider extends LoadableProvider {
   StaffOrderProvider(this.api);
   final ApiService api;
   List<Order> orders = [];
+  Order? selectedOrder;
   int? statusFilter;
   String? dateFilter;
 
@@ -186,11 +187,21 @@ class StaffOrderProvider extends LoadableProvider {
     await load();
   }
 
+  Future<Order?> loadOrderDetail(int id) async {
+    await run(() async {
+      selectedOrder = await api.getStaffOrder(id);
+    });
+    return selectedOrder;
+  }
+
   Future<bool> updateStatus(int id, int statusId) async {
     await run(() async {
       await api.updateOrderStatus(id, statusId);
       orders =
           await api.getStaffOrders(statusId: statusFilter, date: dateFilter);
+      if (selectedOrder?.orderId == id) {
+        selectedOrder = await api.getStaffOrder(id);
+      }
     });
     return error == null;
   }

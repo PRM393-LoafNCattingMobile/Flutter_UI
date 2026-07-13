@@ -22,7 +22,6 @@ class _ReservationScreenState extends State<ReservationScreen> {
   final nameController = TextEditingController();
   final phoneController = TextEditingController();
   final noteController = TextEditingController();
-  int? tableId;
   bool didSeedUser = false;
 
   @override
@@ -52,8 +51,6 @@ class _ReservationScreenState extends State<ReservationScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<ReservationProvider>();
     final auth = context.watch<AuthProvider>();
-    final hasSelectedAvailableTable = tableId != null &&
-        provider.availableTables.any((table) => table.tableId == tableId);
 
     return Scaffold(
       appBar: AppBar(
@@ -111,16 +108,13 @@ class _ReservationScreenState extends State<ReservationScreen> {
                   dateController: dateController,
                   timeController: timeController,
                   guestController: guestController,
-                  selectedTableId: hasSelectedAvailableTable ? tableId : null,
                   onLoadTables: () async {
-                    setState(() => tableId = null);
                     await provider.loadAvailable(
                       dateController.text,
                       timeController.text,
                       int.tryParse(guestController.text) ?? 1,
                     );
                   },
-                  onTableChanged: (value) => setState(() => tableId = value),
                 ),
                 const SizedBox(height: 14),
                 _ReservationGuestCard(
@@ -137,7 +131,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
                   ),
                 const SizedBox(height: 16),
                 FilledButton.icon(
-                  onPressed: provider.isLoading || !hasSelectedAvailableTable
+                  onPressed: provider.isLoading
                       ? null
                       : () async {
                           final ok = await provider.create({
@@ -149,7 +143,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
                             'numberOfGuests':
                                 int.tryParse(guestController.text) ?? 1,
                             'note': noteController.text,
-                            'tableId': tableId,
+                            'tableId': null,
                           });
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -180,18 +174,14 @@ class _ReservationDetailsCard extends StatelessWidget {
     required this.dateController,
     required this.timeController,
     required this.guestController,
-    required this.selectedTableId,
     required this.onLoadTables,
-    required this.onTableChanged,
   });
 
   final ReservationProvider provider;
   final TextEditingController dateController;
   final TextEditingController timeController;
   final TextEditingController guestController;
-  final int? selectedTableId;
   final VoidCallback onLoadTables;
-  final ValueChanged<int?> onTableChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -239,26 +229,23 @@ class _ReservationDetailsCard extends StatelessWidget {
           ),
           if (provider.availableTables.isNotEmpty) ...[
             const SizedBox(height: 12),
-            DropdownButtonFormField<int>(
-              initialValue: selectedTableId,
-              decoration: const InputDecoration(
-                labelText: AppStrings.tableLabel,
-                prefixIcon: Icon(Icons.chair_outlined),
-              ),
-              items: provider.availableTables
-                  .map(
-                    (table) => DropdownMenuItem(
-                      value: table.tableId,
-                      child: Text(
-                        AppStrings.reservationTableOption(
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: provider.availableTables
+                    .take(4)
+                    .map(
+                      (table) => CafeInfoChip(
+                        label: AppStrings.reservationTableOption(
                           table.tableName,
                           table.capacity,
                         ),
                       ),
-                    ),
-                  )
-                  .toList(),
-              onChanged: onTableChanged,
+                    )
+                    .toList(),
+              ),
             ),
           ],
         ],

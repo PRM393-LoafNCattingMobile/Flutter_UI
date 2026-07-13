@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/features/admin/screens/admin_catalog_screen.dart';
@@ -7,6 +9,8 @@ import 'package:loafncatting_mobile/features/admin/screens/admin_dashboard_scree
 import 'package:loafncatting_mobile/features/admin/screens/admin_more_screen.dart';
 import 'package:loafncatting_mobile/features/admin/screens/admin_orders_screen.dart';
 import 'package:loafncatting_mobile/features/admin/screens/admin_reservations_screen.dart';
+import 'package:loafncatting_mobile/providers/app_state.dart';
+import 'package:provider/provider.dart';
 
 /// Khung điều hướng cho Admin/Staff với 7 tab: Tổng quan, Đơn hàng, Đặt bàn,
 /// Thực đơn, Mèo, Chat, Thêm. Admin và Staff dùng chung khung này; phân quyền
@@ -30,6 +34,20 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     AdminChatInboxScreen(),
     AdminMoreScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final auth = _maybeProvider<AuthProvider>(context);
+      final notifications = _maybeProvider<NotificationProvider>(context);
+      final user = auth?.user;
+      if (user == null || notifications == null) return;
+      unawaited(notifications.load(user.userId));
+      unawaited(notifications.startRealtime(user.userId));
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,5 +90,13 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
         ],
       ),
     );
+  }
+}
+
+T? _maybeProvider<T>(BuildContext context) {
+  try {
+    return Provider.of<T>(context, listen: false);
+  } on ProviderNotFoundException {
+    return null;
   }
 }

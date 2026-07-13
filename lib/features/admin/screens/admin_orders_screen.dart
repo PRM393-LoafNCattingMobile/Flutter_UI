@@ -31,11 +31,18 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
     final lookups = context.read<AdminLookupsProvider>().lookups;
     final provider = context.read<StaffOrderProvider>();
     if (lookups == null) return;
+    final options = _nextOrderStatusOptions(order, lookups.orderStatuses);
+    if (options.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đơn này chưa có thao tác trạng thái phù hợp.')),
+      );
+      return;
+    }
 
     final statusId = await showStatusPicker(
       context,
       title: AppStrings.adminUpdateStatusTitle,
-      options: lookups.orderStatuses,
+      options: options,
       currentName: order.statusName,
     );
     if (statusId == null || !mounted) return;
@@ -47,6 +54,40 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
           ? AppStrings.adminStatusUpdatedMessage
           : (provider.error ?? AppStrings.adminStatusUpdatedMessage)),
     ));
+  }
+
+  Future<void> _openOrderDetail(Order order) async {
+    final provider = context.read<StaffOrderProvider>();
+    final detail = await provider.loadOrderDetail(order.orderId);
+    if (!mounted) return;
+    if (detail == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(provider.error ?? 'Không tải được chi tiết đơn.'),
+      ));
+      return;
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => _OrderDetailSheet(
+        order: detail,
+        statusOptions:
+            context.read<AdminLookupsProvider>().lookups?.orderStatuses ??
+                const [],
+        onUpdateStatus: (statusId) async {
+          final ok = await provider.updateStatus(detail.orderId, statusId);
+          if (!mounted || !sheetContext.mounted) return;
+          Navigator.pop(sheetContext);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(ok
+                ? AppStrings.adminStatusUpdatedMessage
+                : (provider.error ?? AppStrings.adminStatusUpdatedMessage)),
+          ));
+        },
+      ),
+    );
   }
 
   @override
@@ -92,6 +133,7 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (_, index) => _OrderCard(
           order: provider.orders[index],
+          onOpenDetail: () => _openOrderDetail(provider.orders[index]),
           onUpdateStatus: () => _updateStatus(provider.orders[index]),
         ),
       ),
@@ -100,13 +142,19 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
 }
 
 class _OrderCard extends StatelessWidget {
-  const _OrderCard({required this.order, required this.onUpdateStatus});
+  const _OrderCard({
+    required this.order,
+    required this.onOpenDetail,
+    required this.onUpdateStatus,
+  });
   final Order order;
+  final VoidCallback onOpenDetail;
   final VoidCallback onUpdateStatus;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final canPrepare = _isPaid(order) || order.statusName != 'Đang chờ';
     return CafeCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,17 +186,194 @@ class _OrderCard extends StatelessWidget {
                       '${AppStrings.adminPaymentStatusPrefix}${order.paymentStatus}'),
             ],
           ),
+          if (!canPrepare) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Đơn chuyển khoản chưa thanh toán nên chưa thể bắt đầu nấu.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           Align(
             alignment: Alignment.centerRight,
-            child: OutlinedButton.icon(
-              onPressed: onUpdateStatus,
-              icon: const Icon(Icons.sync),
-              label: const Text(AppStrings.adminUpdateStatusButton),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.end,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: onOpenDetail,
+                  icon: const Icon(Icons.restaurant_menu_outlined),
+                  label: const Text('Chi tiết nấu'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: onUpdateStatus,
+                  icon: const Icon(Icons.sync),
+                  label: const Text(AppStrings.adminUpdateStatusButton),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
+}
+
+class _OrderDetailSheet extends StatelessWidget {
+  const _OrderDetailSheet({
+    required this.order,
+    required this.statusOptions,
+    required this.onUpdateStatus,
+  });
+
+  final Order order;
+  final List<LookupItem> statusOptions;
+  final Future<void> Function(int statusId) onUpdateStatus;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final nextStatuses = _nextOrderStatusOptions(order, statusOptions);
+    return SafeArea(
+      child: FractionallySizedBox(
+        heightFactor: 0.82,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    AppStrings.adminOrderCodeLabel(order.orderId),
+                    style: theme.textTheme.titleLarge,
+                  ),
+                ),
+                Text(
+                  money(order.totalPrice),
+                  style: moneyTextStyle(
+                    theme.textTheme.titleMedium,
+                    color: loafOrange,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              AppStrings.adminOrderCustomerLabel(order.customerName ?? '-'),
+              style: theme.textTheme.bodyMedium?.copyWith(color: loafMuted),
+            ),
+            Text(
+              formatAdminDateTime(order.orderDate),
+              style: theme.textTheme.bodySmall?.copyWith(color: loafMuted),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                CafeInfoChip(label: order.statusName),
+                CafeInfoChip(
+                    label:
+                        '${AppStrings.adminPaymentStatusPrefix}${order.paymentStatus}'),
+              ],
+            ),
+            if (!_isPaid(order)) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Chờ khách hoàn tất thanh toán trước khi bắt đầu chuẩn bị đơn.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onErrorContainer,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 18),
+            Text('Món cần chuẩn bị', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            if (order.items.isEmpty)
+              Text('Đơn này chưa có dòng món.',
+                  style: theme.textTheme.bodyMedium?.copyWith(color: loafMuted))
+            else
+              ...order.items.map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: loafBorder),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: ListTile(
+                      dense: true,
+                      title: Text(item.productName),
+                      subtitle: Text(money(item.unitPrice)),
+                      trailing: Text(
+                        'x${item.quantity}',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 12),
+            if (nextStatuses.isNotEmpty)
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: nextStatuses
+                    .map(
+                      (status) => FilledButton.icon(
+                        onPressed: () => onUpdateStatus(status.id),
+                        icon: Icon(_iconForOrderStatus(status.name)),
+                        label: Text(status.name),
+                      ),
+                    )
+                    .toList(),
+              )
+            else
+              Text(
+                'Đơn đã ở trạng thái cuối.',
+                style: theme.textTheme.bodySmall?.copyWith(color: loafMuted),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+bool _isPaid(Order order) => order.paymentStatus == 'Đã thanh toán';
+
+List<LookupItem> _nextOrderStatusOptions(
+  Order order,
+  List<LookupItem> statuses,
+) {
+  final names = switch (order.statusName) {
+    'Đang chờ' => _isPaid(order) ? ['Đang chuẩn bị', 'Đã hủy'] : ['Đã hủy'],
+    'Đang chuẩn bị' => ['Hoàn thành', 'Đã hủy'],
+    _ => const <String>[],
+  };
+  return statuses.where((status) => names.contains(status.name)).toList();
+}
+
+IconData _iconForOrderStatus(String statusName) {
+  return switch (statusName) {
+    'Đang chuẩn bị' => Icons.soup_kitchen_outlined,
+    'Hoàn thành' => Icons.check_circle_outline,
+    'Đã hủy' => Icons.cancel_outlined,
+    _ => Icons.sync,
+  };
 }
