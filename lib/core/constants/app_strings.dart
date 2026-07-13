@@ -161,7 +161,7 @@ class AppStrings {
   static const popularPicksTitle = 'Món nổi bật';
   static String menuItemsToday(int count) => '$count món hôm nay';
   static const menuEmptyMessage = 'Không tìm thấy món nào.';
-  static const menuGreeting = 'Xin chào, bạn yêu mèo!';
+  static String menuGreeting(String username) => 'Xin chào $username';
   static const menuWelcomeBack = "Chào mừng bạn quay lại Loaf n' Catting";
   static const addButton = 'Thêm';
   static const inStockLabel = 'Còn hàng';

@@ -20,6 +20,7 @@ import 'package:loafncatting_mobile/screens/profile_screen.dart';
 import 'package:loafncatting_mobile/screens/reservation_history_screen.dart';
 import 'package:loafncatting_mobile/screens/reservation_screen.dart';
 import 'package:loafncatting_mobile/services/api_service.dart';
+import 'package:loafncatting_mobile/widgets/cafe_form_fields.dart';
 import 'package:loafncatting_mobile/widgets/state_views.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -31,6 +32,7 @@ void main() {
     expect(AppStrings.registerButton, 'Đăng ký');
     expect(AppStrings.homeNavLabel, 'Trang chủ');
     expect(AppStrings.menuSearchHint, 'Tìm món');
+    expect(AppStrings.menuGreeting('Lan'), 'Xin chào Lan');
     expect(AppStrings.cartTitle(2), 'Giỏ hàng (2)');
     expect(AppStrings.menuItemsToday(3), '3 món hôm nay');
     expect(
@@ -58,6 +60,17 @@ void main() {
   test('money formats prices with dot thousands and VND suffix', () {
     expect(money(25000), '25.000 VND');
     expect(money(1250000), '1.250.000 VND');
+  });
+
+  test('phone validators only accept 10-11 numeric digits', () {
+    expect(CafeValidators.phone('0123456789'), isNull);
+    expect(CafeValidators.phone('01234567890'), isNull);
+    expect(CafeValidators.phone('012345678'), isNotNull);
+    expect(CafeValidators.phone('012345678901'), isNotNull);
+    expect(CafeValidators.phone('01234abcde'), isNotNull);
+    expect(CafeValidators.phone('0123 456 789'), isNotNull);
+    expect(CafeValidators.loginIdentity('0123456789'), isNull);
+    expect(CafeValidators.loginIdentity('01234abcde'), isNotNull);
   });
 
   testWidgets(
@@ -164,6 +177,36 @@ void main() {
       'phoneNumber': '0987654321',
     });
     expect(find.text(AppStrings.profileUpdatedMessage), findsOneWidget);
+  });
+
+  testWidgets('ProfileScreen blocks invalid phone before saving',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final api = _FakeApiService();
+    final auth = AuthProvider(api)..user = _sampleUser();
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        child: const ProfileScreen(),
+        api: api,
+        auth: auth,
+      ),
+    );
+
+    await tester.drag(find.byType(ListView), const Offset(0, -600));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(AppStrings.editProfileButton));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextField, AppStrings.profilePhoneLabel),
+      '09876abcde',
+    );
+    await tester.tap(find.text(AppStrings.saveButton));
+    await tester.pumpAndSettle();
+
+    expect(api.lastUpdateProfileBody, isNull);
+    expect(find.text('Vui lòng nhập số điện thoại hợp lệ'), findsOneWidget);
   });
 
   testWidgets('CartScreen renders centralized empty state copy',
@@ -651,18 +694,18 @@ class _FakeApiService extends ApiService {
   Future<Reservation> createReservation(Map<String, dynamic> body) async {
     lastCreateReservationBody = body;
     return Reservation(
-        reservationId: 11,
-        userId: body['userId'] as int?,
-        date: body['date'] as String,
-        time: body['time'] as String,
-        guestName: body['guestName'] as String,
-        guestPhoneNumber: body['guestPhoneNumber'] as String,
-        numberOfGuests: body['numberOfGuests'] as int,
-        note: body['note'] as String?,
-        statusName: 'Pending',
-        tableId: body['tableId'] as int? ?? 8,
-        tableName: 'Window 2',
-      );
+      reservationId: 11,
+      userId: body['userId'] as int?,
+      date: body['date'] as String,
+      time: body['time'] as String,
+      guestName: body['guestName'] as String,
+      guestPhoneNumber: body['guestPhoneNumber'] as String,
+      numberOfGuests: body['numberOfGuests'] as int,
+      note: body['note'] as String?,
+      statusName: 'Pending',
+      tableId: body['tableId'] as int? ?? 8,
+      tableName: 'Window 2',
+    );
   }
 
   @override

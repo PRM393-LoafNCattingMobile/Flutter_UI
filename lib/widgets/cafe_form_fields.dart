@@ -16,8 +16,7 @@ class CafeValidators {
     if (text.contains('@')) {
       return email(text);
     }
-    final digits = text.replaceAll(RegExp(r'\D'), '');
-    if (digits.length < 9) {
+    if (!RegExp(r'^\d{10,11}$').hasMatch(text)) {
       return 'Vui lòng nhập số điện thoại hợp lệ';
     }
     return null;
@@ -45,8 +44,7 @@ class CafeValidators {
   static String? phone(String? value) {
     final required = requiredField(value, 'số điện thoại');
     if (required != null) return required;
-    final digits = value!.replaceAll(RegExp(r'\D'), '');
-    if (digits.length < 9) {
+    if (!RegExp(r'^\d{10,11}$').hasMatch(value!.trim())) {
       return 'Vui lòng nhập số điện thoại hợp lệ';
     }
     return null;

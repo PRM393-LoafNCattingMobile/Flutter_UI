@@ -735,6 +735,9 @@ class _MenuHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cartCount = context.watch<CartProvider>().count;
+    final username = context.watch<AuthProvider>().user?.name.trim();
+    final greetingName =
+        username == null || username.isEmpty ? 'bạn' : username;
     return Container(
       padding: EdgeInsets.fromLTRB(
           16, MediaQuery.of(context).padding.top + 14, 16, 16),
@@ -755,7 +758,7 @@ class _MenuHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  AppStrings.menuGreeting,
+                  AppStrings.menuGreeting(greetingName),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,

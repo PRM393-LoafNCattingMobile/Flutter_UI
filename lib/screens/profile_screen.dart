@@ -6,6 +6,7 @@ import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/services/image_upload_service.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
+import 'package:loafncatting_mobile/widgets/cafe_form_fields.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
 import 'package:provider/provider.dart';
 
@@ -221,6 +222,13 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
         validationError = name.isEmpty
             ? AppStrings.nameRequiredMessage
             : AppStrings.phoneRequiredMessage;
+      });
+      return;
+    }
+    final phoneError = CafeValidators.phone(phone);
+    if (phoneError != null) {
+      setState(() {
+        validationError = phoneError;
       });
       return;
     }

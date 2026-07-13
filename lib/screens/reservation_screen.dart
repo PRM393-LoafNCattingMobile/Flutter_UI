@@ -3,6 +3,7 @@ import 'package:loafncatting_mobile/core/constants/app_routes.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/screens/reservation_history_screen.dart';
+import 'package:loafncatting_mobile/widgets/cafe_form_fields.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
 import 'package:loafncatting_mobile/widgets/state_views.dart';
 import 'package:provider/provider.dart';
@@ -193,12 +194,20 @@ class _ReservationScreenState extends State<ReservationScreen> {
                       ? null
                       : () async {
                           if (!_ensureFutureReservationDateTime()) return;
+                          final phoneError =
+                              CafeValidators.phone(phoneController.text);
+                          if (phoneError != null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(phoneError)),
+                            );
+                            return;
+                          }
                           final ok = await provider.create({
                             'userId': auth.user!.userId,
                             'date': dateController.text,
                             'time': timeController.text,
                             'guestName': nameController.text,
-                            'guestPhoneNumber': phoneController.text,
+                            'guestPhoneNumber': phoneController.text.trim(),
                             'numberOfGuests':
                                 int.tryParse(guestController.text) ?? 1,
                             'note': noteController.text,
