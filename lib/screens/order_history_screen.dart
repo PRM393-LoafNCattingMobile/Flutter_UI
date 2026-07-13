@@ -137,11 +137,11 @@ class _OrderHistoryCard extends StatelessWidget {
             runSpacing: 8,
             children: [
               CafeInfoChip(
-                label: order.statusName,
+                label: 'Đơn: ${order.statusName}',
                 color: _statusColor(order.statusName),
               ),
               CafeInfoChip(
-                label: order.paymentStatus,
+                label: 'Thanh toán: ${order.paymentStatus}',
                 color: _paymentColor(order.paymentStatus),
               ),
             ],
