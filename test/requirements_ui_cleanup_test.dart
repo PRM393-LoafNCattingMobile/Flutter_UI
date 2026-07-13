@@ -16,6 +16,7 @@ import 'package:loafncatting_mobile/screens/more_screen.dart';
 import 'package:loafncatting_mobile/screens/notifications_screen.dart';
 import 'package:loafncatting_mobile/screens/menu_screen.dart';
 import 'package:loafncatting_mobile/screens/product_detail_screen.dart';
+import 'package:loafncatting_mobile/screens/profile_screen.dart';
 import 'package:loafncatting_mobile/screens/reservation_history_screen.dart';
 import 'package:loafncatting_mobile/screens/reservation_screen.dart';
 import 'package:loafncatting_mobile/services/api_service.dart';
@@ -124,6 +125,46 @@ void main() {
     expect(find.text(AppStrings.storeLocationTitle), findsOneWidget);
     expect(find.text(AppStrings.chatTitle), findsOneWidget);
     expect(find.text(AppStrings.profileTitle), findsOneWidget);
+  });
+
+  testWidgets('ProfileScreen saves edited customer profile safely',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final api = _FakeApiService();
+    final auth = AuthProvider(api)..user = _sampleUser();
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        child: const ProfileScreen(),
+        api: api,
+        auth: auth,
+      ),
+    );
+
+    await tester.drag(find.byType(ListView), const Offset(0, -600));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(AppStrings.editProfileButton));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextField, AppStrings.profileNameLabel),
+      'Lan New',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, AppStrings.profilePhoneLabel),
+      '0987654321',
+    );
+    await tester.tap(find.text(AppStrings.saveButton));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(auth.user?.name, 'Lan New');
+    expect(auth.user?.phoneNumber, '0987654321');
+    expect(api.lastUpdateProfileBody, {
+      'name': 'Lan New',
+      'phoneNumber': '0987654321',
+    });
+    expect(find.text(AppStrings.profileUpdatedMessage), findsOneWidget);
   });
 
   testWidgets('CartScreen renders centralized empty state copy',
@@ -680,6 +721,7 @@ class _FakeApiService extends ApiService {
   int createPaymentLinkCallCount = 0;
   Map<String, dynamic>? lastCreateOrderBody;
   Map<String, dynamic>? lastCreateReservationBody;
+  Map<String, dynamic>? lastUpdateProfileBody;
 
   @override
   Future<List<Category>> getCategories() async => categories;
@@ -687,6 +729,24 @@ class _FakeApiService extends ApiService {
   @override
   Future<List<Product>> getProducts({int? categoryId, String? search}) async =>
       products;
+
+  @override
+  Future<AuthUser> updateProfile(String name, String phoneNumber) async {
+    lastUpdateProfileBody = {
+      'name': name,
+      'phoneNumber': phoneNumber,
+    };
+    final current = _sampleUser();
+    return AuthUser(
+      userId: current.userId,
+      name: name,
+      email: current.email,
+      phoneNumber: phoneNumber,
+      roleName: current.roleName,
+      token: current.token,
+      avatarUrl: current.avatarUrl,
+    );
+  }
 
   @override
   Future<List<CafeTable>> getAvailableTables({

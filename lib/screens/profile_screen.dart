@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/constants/app_routes.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/core/errors/user_friendly_error.dart';
+import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/services/image_upload_service.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
@@ -22,66 +23,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = auth.user;
     if (user == null) return;
 
-    final nameController = TextEditingController(text: user.name);
-    final phoneController = TextEditingController(text: user.phoneNumber);
-    final result = await showDialog<({String name, String phoneNumber})>(
+    final saved = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text(AppStrings.profileEditTitle),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: AppStrings.profileNameLabel,
-                prefixIcon: Icon(Icons.person_outline),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: AppStrings.profilePhoneLabel,
-                prefixIcon: Icon(Icons.phone_outlined),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text(AppStrings.cancelButton),
-          ),
-          FilledButton(
-            onPressed: () {
-              final name = nameController.text.trim();
-              final phoneNumber = phoneController.text.trim();
-              if (name.isEmpty || phoneNumber.isEmpty) return;
-              Navigator.pop(
-                dialogContext,
-                (name: name, phoneNumber: phoneNumber),
-              );
-            },
-            child: const Text(AppStrings.saveButton),
-          ),
-        ],
-      ),
+      builder: (_) => _EditProfileDialog(auth: auth, user: user),
     );
-    nameController.dispose();
-    phoneController.dispose();
-    if (result == null || !mounted) return;
 
-    final ok = await auth.updateProfile(result.name, result.phoneNumber);
-    if (!mounted) return;
+    if (!mounted || saved != true) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(ok
-            ? AppStrings.profileUpdatedMessage
-            : (auth.error ?? AppStrings.profileUpdatedMessage)),
-      ),
+      const SnackBar(content: Text(AppStrings.profileUpdatedMessage)),
     );
   }
 
@@ -193,7 +142,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const Divider(height: 22),
                   _ProfileRow(
                       icon: Icons.phone_outlined,
-                      label: AppStrings.phoneLabel,
+                      label: AppStrings.profilePhoneLabel,
                       value: user?.phoneNumber ?? ''),
                 ],
               ),
@@ -230,6 +179,120 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _EditProfileDialog extends StatefulWidget {
+  const _EditProfileDialog({required this.auth, required this.user});
+
+  final AuthProvider auth;
+  final AuthUser user;
+
+  @override
+  State<_EditProfileDialog> createState() => _EditProfileDialogState();
+}
+
+class _EditProfileDialogState extends State<_EditProfileDialog> {
+  late final TextEditingController nameController;
+  late final TextEditingController phoneController;
+  String? validationError;
+  bool saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    nameController = TextEditingController(text: widget.user.name);
+    phoneController = TextEditingController(text: widget.user.phoneNumber);
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    phoneController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final name = nameController.text.trim();
+    final phone = phoneController.text.trim();
+    if (name.isEmpty || phone.isEmpty) {
+      setState(() {
+        validationError = name.isEmpty
+            ? AppStrings.nameRequiredMessage
+            : AppStrings.phoneRequiredMessage;
+      });
+      return;
+    }
+
+    setState(() {
+      saving = true;
+      validationError = null;
+    });
+
+    final ok = await widget.auth.updateProfile(name, phone);
+    if (!mounted) return;
+    if (ok) {
+      Navigator.pop(context, true);
+      return;
+    }
+
+    setState(() {
+      saving = false;
+      validationError =
+          widget.auth.error ?? AppStrings.profileUpdateFailedMessage;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text(AppStrings.profileEditTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: nameController,
+            textInputAction: TextInputAction.next,
+            decoration: const InputDecoration(
+              labelText: AppStrings.profileNameLabel,
+              prefixIcon: Icon(Icons.person_outline),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: phoneController,
+            keyboardType: TextInputType.phone,
+            decoration: const InputDecoration(
+              labelText: AppStrings.profilePhoneLabel,
+              prefixIcon: Icon(Icons.phone_outlined),
+            ),
+          ),
+          if (validationError != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              validationError!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: saving ? null : () => Navigator.pop(context, false),
+          child: const Text(AppStrings.cancelButton),
+        ),
+        FilledButton(
+          onPressed: saving ? null : _save,
+          child: saving
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text(AppStrings.saveButton),
+        ),
+      ],
     );
   }
 }
