@@ -208,6 +208,16 @@ class ApiService {
     return data as Map<String, dynamic>;
   }
 
+  Future<Order?> getPendingPaymentOrder(int userId) async {
+    final data = await _get('/orders/user/$userId/pending-payment');
+    return data == null ? null : Order.fromJson(data);
+  }
+
+  Future<List<Order>> getUserOrders(int userId) async {
+    final data = await _get('/orders/user/$userId') as List;
+    return data.map((item) => Order.fromJson(item)).toList();
+  }
+
   Future<List<CartItem>> getCart(int userId) async {
     final data = await _get('/carts/user/$userId');
     return _cartItemsFromResponse(data);
@@ -445,6 +455,11 @@ class ApiService {
       'date': date,
     }) as List;
     return data.map((item) => Order.fromJson(item)).toList();
+  }
+
+  Future<Order> getStaffOrder(int id) async {
+    final data = await _get('/staff/orders/$id');
+    return Order.fromJson(data);
   }
 
   Future<Order> updateOrderStatus(int id, int statusId) async {

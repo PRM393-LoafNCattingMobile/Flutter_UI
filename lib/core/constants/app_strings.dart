@@ -63,6 +63,10 @@ class AppStrings {
   static const notificationsTitle = 'Thông báo';
   static const notificationsMenuSubtitle =
       'Cập nhật từ quán và ghi chú đơn hàng';
+  static const orderHistoryTitle = 'Lịch sử đơn hàng';
+  static const orderHistoryMenuSubtitle =
+      'Xem trạng thái và món trong các đơn đã đặt';
+  static const orderHistoryEmptyMessage = 'Bạn chưa có đơn hàng nào.';
   static const storeLocationTitle = 'Vị trí cửa hàng';
   static const storeLocationMenuSubtitle = 'Tìm đường đến quán';
   static const chatTitle = 'Trò chuyện';

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loafncatting_mobile/core/constants/app_routes.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
+import 'package:loafncatting_mobile/features/admin/models/admin_models.dart';
 import 'package:loafncatting_mobile/main.dart';
 import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
@@ -356,7 +357,7 @@ void main() {
     expect(tester.widget<FilledButton>(addButton).onPressed, isNull);
   });
 
-  testWidgets('ReservationScreen keeps reservation flow interactive',
+  testWidgets('ReservationScreen submits without requiring table selection',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(1200, 1600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -390,20 +391,17 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.byType(DropdownButtonFormField<int>), findsOneWidget);
-
-    await tester.tap(find.byType(DropdownButtonFormField<int>));
-    await tester.pumpAndSettle();
-    await tester.tap(find.textContaining('Window 2').last);
-    await tester.pumpAndSettle();
+    expect(find.byType(DropdownButtonFormField<int>), findsNothing);
+    expect(find.textContaining('Window 2'), findsOneWidget);
 
     await tester.tap(find.text(AppStrings.confirmReservationButton));
     await tester.pump();
 
     expect(find.text(AppStrings.reservationCreatedMessage), findsOneWidget);
+    expect(api.lastCreateReservationBody?['tableId'], isNull);
   });
 
-  testWidgets('ReservationScreen drops stale table selection after reload',
+  testWidgets('ReservationScreen refreshes available table preview after reload',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(1200, 1600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -447,7 +445,6 @@ void main() {
           widget.decoration?.labelText == AppStrings.dateLabel,
     );
     final loadButton = find.text(AppStrings.loadAvailableTablesButton);
-    final tableDropdown = find.byType(DropdownButtonFormField<int>);
     final confirmButton = find.widgetWithText(
       FilledButton,
       AppStrings.confirmReservationButton,
@@ -458,11 +455,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    await tester.tap(tableDropdown);
-    await tester.pumpAndSettle();
-    await tester.tap(find.textContaining('Window 2').last);
-    await tester.pumpAndSettle();
-
+    expect(find.textContaining('Window 2'), findsOneWidget);
     expect(
       tester.widget<FilledButton>(confirmButton).onPressed,
       isNotNull,
@@ -474,19 +467,18 @@ void main() {
     await tester.pump();
 
     expect(
-      tester.widget<DropdownButtonFormField<int>>(tableDropdown).initialValue,
-      isNull,
-    );
-    expect(
       tester.widget<FilledButton>(confirmButton).onPressed,
-      isNull,
+      isNotNull,
     );
 
-    await tester.tap(tableDropdown);
-    await tester.pumpAndSettle();
-
-    expect(find.textContaining('Patio 1').last, findsOneWidget);
+    expect(find.textContaining('Patio 1'), findsOneWidget);
     expect(find.textContaining('Window 2'), findsNothing);
+
+    await tester.tap(find.text(AppStrings.confirmReservationButton));
+    await tester.pump();
+
+    expect(api.lastCreateReservationBody?['date'], '2026-06-20');
+    expect(api.lastCreateReservationBody?['tableId'], isNull);
   });
 
   testWidgets(
@@ -669,6 +661,7 @@ class _FakeApiService extends ApiService {
   int createOrderCallCount = 0;
   int createPaymentLinkCallCount = 0;
   Map<String, dynamic>? lastCreateOrderBody;
+  Map<String, dynamic>? lastCreateReservationBody;
 
   @override
   Future<List<Category>> getCategories() async => categories;
@@ -686,8 +679,9 @@ class _FakeApiService extends ApiService {
       availableTablesByRequest['$date|$time|$guestCount'] ?? availableTables;
 
   @override
-  Future<Reservation> createReservation(Map<String, dynamic> body) async =>
-      Reservation(
+  Future<Reservation> createReservation(Map<String, dynamic> body) async {
+    lastCreateReservationBody = body;
+    return Reservation(
         reservationId: 11,
         userId: body['userId'] as int?,
         date: body['date'] as String,
@@ -697,16 +691,29 @@ class _FakeApiService extends ApiService {
         numberOfGuests: body['numberOfGuests'] as int,
         note: body['note'] as String?,
         statusName: 'Pending',
-        tableId: body['tableId'] as int,
+        tableId: body['tableId'] as int? ?? 8,
         tableName: 'Window 2',
       );
+  }
 
   @override
   Future<Map<String, dynamic>> createOrder(Map<String, dynamic> body) async {
     createOrderCallCount += 1;
     lastCreateOrderBody = body;
-    return {'orderId': 99};
+    return {
+      'orderId': 99,
+      'orderDate': '2026-06-30T10:00:00',
+      'totalPrice': 55000,
+      'customerUserId': body['userId'],
+      'statusName': 'Đang chờ',
+      'paymentStatus': 'Đang chờ thanh toán',
+      'items': const [],
+      'customerName': 'Lan',
+    };
   }
+
+  @override
+  Future<Order?> getPendingPaymentOrder(int userId) async => null;
 
   @override
   Future<Map<String, dynamic>> createPaymentLink(int orderId) async {

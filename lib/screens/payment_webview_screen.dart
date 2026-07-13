@@ -59,6 +59,13 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
     if (mounted) Navigator.pop(context, paid);
   }
 
+  Future<void> _closeAfterStatusCheck() async {
+    await _check();
+    if (!_finished) {
+      _finish(false);
+    }
+  }
+
   @override
   void dispose() {
     _poller?.cancel();
@@ -70,14 +77,14 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) _finish(false);
+        if (!didPop) unawaited(_closeAfterStatusCheck());
       },
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Thanh toán PayOS'),
           leading: IconButton(
             icon: const Icon(Icons.close),
-            onPressed: () => _finish(false),
+            onPressed: () => unawaited(_closeAfterStatusCheck()),
           ),
         ),
         body: Column(

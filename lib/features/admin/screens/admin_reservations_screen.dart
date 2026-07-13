@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
+import 'package:loafncatting_mobile/features/admin/models/admin_models.dart';
 import 'package:loafncatting_mobile/features/admin/providers/admin_providers.dart';
 import 'package:loafncatting_mobile/features/admin/widgets/admin_widgets.dart';
 import 'package:loafncatting_mobile/features/admin/widgets/status_picker.dart';
@@ -32,16 +35,30 @@ class _AdminReservationsScreenState extends State<AdminReservationsScreen> {
     final lookups = context.read<AdminLookupsProvider>().lookups;
     final provider = context.read<StaffReservationProvider>();
     if (lookups == null) return;
+    final options =
+        _nextReservationStatusOptions(reservation, lookups.reservationStatuses);
+    if (options.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lượt đặt bàn này đã ở trạng thái cuối.')),
+      );
+      return;
+    }
 
     final statusId = await showStatusPicker(
       context,
       title: AppStrings.adminUpdateStatusTitle,
-      options: lookups.reservationStatuses,
+      options: options,
       currentName: reservation.statusName,
     );
     if (statusId == null || !mounted) return;
 
     final ok = await provider.updateStatus(reservation.reservationId, statusId);
+    if (ok && mounted) {
+      final tables = _maybeProvider<AdminTableProvider>(context);
+      if (tables != null) {
+        unawaited(tables.load());
+      }
+    }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(ok
@@ -109,6 +126,7 @@ class _ReservationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final note = reservation.note?.trim();
     return CafeCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,6 +151,13 @@ class _ReservationCard extends StatelessWidget {
                 reservation.tableName, reservation.numberOfGuests),
             style: theme.textTheme.bodySmall?.copyWith(color: loafMuted),
           ),
+          if (note != null && note.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              note,
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
           const SizedBox(height: 12),
           Align(
             alignment: Alignment.centerRight,
@@ -145,5 +170,25 @@ class _ReservationCard extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+List<LookupItem> _nextReservationStatusOptions(
+  Reservation reservation,
+  List<LookupItem> statuses,
+) {
+  final names = switch (reservation.statusName) {
+    'Đang chờ' => ['Đã xác nhận', 'Đã hủy'],
+    'Đã xác nhận' => ['Hoàn thành', 'Đã hủy', 'Không đến'],
+    _ => const <String>[],
+  };
+  return statuses.where((status) => names.contains(status.name)).toList();
+}
+
+T? _maybeProvider<T>(BuildContext context) {
+  try {
+    return Provider.of<T>(context, listen: false);
+  } on ProviderNotFoundException {
+    return null;
   }
 }

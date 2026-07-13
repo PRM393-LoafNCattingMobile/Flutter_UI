@@ -4,7 +4,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/errors/user_friendly_error.dart';
+import 'package:loafncatting_mobile/features/admin/models/admin_models.dart';
 import 'package:loafncatting_mobile/features/chat/services/chat_realtime_service.dart';
+import 'package:loafncatting_mobile/features/notifications/services/notification_realtime_service.dart';
 import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -632,6 +634,22 @@ class ReservationProvider extends LoadableProvider {
   }
 }
 
+class OrderHistoryProvider extends LoadableProvider {
+  OrderHistoryProvider(this.api);
+  final ApiService api;
+  List<Order> orders = [];
+
+  Future<void> load(int userId) async => run(() async {
+        orders = await api.getUserOrders(userId);
+      });
+
+  void clearSession() {
+    resetLoadState();
+    orders = [];
+    notifyListeners();
+  }
+}
+
 class CatProvider extends LoadableProvider {
   CatProvider(this.api);
   final ApiService api;
@@ -643,13 +661,54 @@ class CatProvider extends LoadableProvider {
 }
 
 class NotificationProvider extends LoadableProvider {
-  NotificationProvider(this.api);
+  NotificationProvider(this.api, {NotificationRealtimeService? realtime})
+      : _realtime = realtime ?? NotificationRealtimeService();
   final ApiService api;
+  final NotificationRealtimeService _realtime;
   List<AppNotification> notifications = [];
+  StreamSubscription<AppNotification>? _createdSubscription;
+  final _popupController = StreamController<AppNotification>.broadcast();
+  int? _activeRealtimeUserId;
+
+  Stream<AppNotification> get popupNotifications => _popupController.stream;
+
+  int get unreadCount =>
+      notifications.where((notification) => !notification.isRead).length;
 
   Future<void> load(int userId) async => run(() async {
         notifications = await api.getNotifications(userId);
       });
+
+  Future<void> startRealtime(int userId) async {
+    if (_activeRealtimeUserId == userId && _createdSubscription != null) {
+      return;
+    }
+
+    await _createdSubscription?.cancel();
+    _activeRealtimeUserId = userId;
+    _createdSubscription = _realtime.created.listen((notification) {
+      final index = notifications.indexWhere(
+        (item) => item.notificationId == notification.notificationId,
+      );
+      if (index >= 0) {
+        notifications[index] = notification;
+      } else {
+        notifications.insert(0, notification);
+      }
+      _popupController.add(notification);
+      notifyListeners();
+    });
+
+    await _joinUserNotificationsSafely();
+  }
+
+  Future<void> _joinUserNotificationsSafely() async {
+    try {
+      await _realtime.joinUserNotifications();
+    } catch (_) {
+      // Notifications still load through REST when realtime is unavailable.
+    }
+  }
 
   Future<void> markRead(int id, int userId) async => run(() async {
         await api.markNotificationRead(id);
@@ -659,7 +718,19 @@ class NotificationProvider extends LoadableProvider {
   void clearSession() {
     resetLoadState();
     notifications = [];
+    _activeRealtimeUserId = null;
+    _createdSubscription?.cancel();
+    _createdSubscription = null;
+    _realtime.stop();
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _createdSubscription?.cancel();
+    _popupController.close();
+    _realtime.dispose();
+    super.dispose();
   }
 }
 
@@ -737,12 +808,14 @@ class SessionCoordinator {
     required AuthProvider auth,
     required CartProvider cart,
     required ReservationProvider reservations,
+    OrderHistoryProvider? orderHistory,
     required NotificationProvider notifications,
     required ChatProvider chat,
   }) async {
     await auth.logout();
     cart.clearSession();
     reservations.clearSession();
+    orderHistory?.clearSession();
     notifications.clearSession();
     chat.clearSession();
   }

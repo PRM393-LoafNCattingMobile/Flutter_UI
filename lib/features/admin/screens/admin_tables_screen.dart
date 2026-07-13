@@ -37,7 +37,10 @@ class _AdminTablesScreenState extends State<AdminTablesScreen> {
     });
   }
 
-  bool get _canManage =>
+  bool get _canEditTables =>
+      RoleRouting.isAdmin(context.read<AuthProvider>().user?.roleName);
+
+  bool get _canUpdateStatus =>
       RoleRouting.isStaffOrAdmin(context.read<AuthProvider>().user?.roleName);
 
   Future<void> _openForm(CafeTable? table) async {
@@ -110,20 +113,26 @@ class _AdminTablesScreenState extends State<AdminTablesScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AdminTableProvider>();
-    final canManage = _canManage;
+    final canEditTables = _canEditTables;
+    final canUpdateStatus = _canUpdateStatus;
     return Scaffold(
       appBar: AppBar(title: const Text(AppStrings.adminTablesTitle)),
-      floatingActionButton: canManage
+      floatingActionButton: canEditTables
           ? FloatingActionButton(
               onPressed: () => _openForm(null),
               child: const Icon(Icons.add),
             )
           : null,
-      body: CafeSurface(child: _buildBody(provider, canManage)),
+      body: CafeSurface(
+          child: _buildBody(provider, canEditTables, canUpdateStatus)),
     );
   }
 
-  Widget _buildBody(AdminTableProvider provider, bool canManage) {
+  Widget _buildBody(
+    AdminTableProvider provider,
+    bool canEditTables,
+    bool canUpdateStatus,
+  ) {
     if (provider.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -135,13 +144,19 @@ class _AdminTablesScreenState extends State<AdminTablesScreen> {
     }
     return RefreshIndicator(
       onRefresh: provider.load,
-      child: ListView.separated(
+      child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        itemCount: provider.tables.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (_, index) {
-          final table = provider.tables[index];
-          return CafeCard(
+        children: [
+          _TableMapSection(
+            tables: provider.tables,
+            canUpdateStatus: canUpdateStatus,
+            onTapTable: _updateStatus,
+          ),
+          const SizedBox(height: 14),
+          ...provider.tables.map((table) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: CafeCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -172,34 +187,191 @@ class _AdminTablesScreenState extends State<AdminTablesScreen> {
                 const SizedBox(height: 8),
                 Align(
                   alignment: Alignment.centerRight,
-                  child: canManage
-                      ? Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            TextButton.icon(
-                              onPressed: () => _openForm(table),
-                              icon: const Icon(Icons.edit_outlined),
-                              label: const Text(AppStrings.adminSaveButton),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline),
-                              onPressed: () => _delete(table),
-                            ),
-                          ],
-                        )
-                      : OutlinedButton.icon(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.end,
+                    children: [
+                      if (canUpdateStatus)
+                        OutlinedButton.icon(
                           onPressed: () => _updateStatus(table),
                           icon: const Icon(Icons.sync),
-                          label: const Text(AppStrings.adminUpdateStatusButton),
+                          label:
+                              const Text(AppStrings.adminUpdateStatusButton),
                         ),
+                      if (canEditTables) ...[
+                        TextButton.icon(
+                          onPressed: () => _openForm(table),
+                          icon: const Icon(Icons.edit_outlined),
+                          label: const Text(AppStrings.adminSaveButton),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () => _delete(table),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ],
             ),
-          );
-        },
+              ),
+            );
+          }),
+        ],
       ),
     );
   }
+}
+
+class _TableMapSection extends StatelessWidget {
+  const _TableMapSection({
+    required this.tables,
+    required this.canUpdateStatus,
+    required this.onTapTable,
+  });
+
+  final List<CafeTable> tables;
+  final bool canUpdateStatus;
+  final ValueChanged<CafeTable> onTapTable;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final grouped = <String, List<CafeTable>>{};
+    for (final table in tables) {
+      grouped.putIfAbsent(table.area?.trim().isNotEmpty == true
+          ? table.area!.trim()
+          : 'Khu chung', () => []).add(table);
+    }
+
+    return CafeCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const CafeIconBadge(icon: Icons.grid_view_outlined),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text('Sơ đồ bàn',
+                    style: theme.textTheme.titleMedium),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...grouped.entries.map(
+            (entry) => Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(entry.key,
+                      style: theme.textTheme.labelLarge
+                          ?.copyWith(color: loafMuted)),
+                  const SizedBox(height: 8),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final columns = constraints.maxWidth >= 560 ? 4 : 2;
+                      return GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: entry.value.length,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: columns,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                          childAspectRatio: 1.55,
+                        ),
+                        itemBuilder: (_, index) {
+                          final table = entry.value[index];
+                          return _TableMapTile(
+                            table: table,
+                            onTap: canUpdateStatus
+                                ? () => onTapTable(table)
+                                : null,
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TableMapTile extends StatelessWidget {
+  const _TableMapTile({required this.table, this.onTap});
+
+  final CafeTable table;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = _statusColor(table.statusName);
+    return Material(
+      color: color.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: color.withValues(alpha: 0.45)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.table_restaurant_outlined, color: color, size: 20),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      table.tableName,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                ],
+              ),
+              Text('${table.capacity} khách',
+                  style: theme.textTheme.bodySmall?.copyWith(color: loafMuted)),
+              Text(
+                table.statusName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+Color _statusColor(String statusName) {
+  return switch (statusName) {
+    'Trống' => const Color(0xFF2E7D32),
+    'Đã đặt' => const Color(0xFFEF6C00),
+    'Đang sử dụng' => loafOrange,
+    'Bảo trì' => const Color(0xFFC62828),
+    _ => loafMuted,
+  };
 }
 
 class AdminTableFormScreen extends StatefulWidget {

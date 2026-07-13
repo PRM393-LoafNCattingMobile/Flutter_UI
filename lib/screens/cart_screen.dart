@@ -40,7 +40,6 @@ class CartScreen extends StatelessWidget {
                               child: CafeImageFrame(
                                 imageUrl: item.product.picture,
                                 icon: Icons.local_cafe,
-                                label: item.product.name,
                                 borderRadius: 14,
                               ),
                             ),
