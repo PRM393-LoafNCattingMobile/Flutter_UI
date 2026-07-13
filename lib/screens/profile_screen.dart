@@ -133,6 +133,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   auth: auth,
                   cart: context.read<CartProvider>(),
                   reservations: context.read<ReservationProvider>(),
+                  orderHistory: context.read<OrderHistoryProvider>(),
                   notifications: context.read<NotificationProvider>(),
                   chat: context.read<ChatProvider>(),
                 );

@@ -213,6 +213,11 @@ class ApiService {
     return data == null ? null : Order.fromJson(data);
   }
 
+  Future<List<Order>> getUserOrders(int userId) async {
+    final data = await _get('/orders/user/$userId') as List;
+    return data.map((item) => Order.fromJson(item)).toList();
+  }
+
   Future<List<CartItem>> getCart(int userId) async {
     final data = await _get('/carts/user/$userId');
     return _cartItemsFromResponse(data);

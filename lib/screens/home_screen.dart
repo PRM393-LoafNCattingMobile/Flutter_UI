@@ -7,7 +7,6 @@ import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/screens/cat_gallery_screen.dart';
 import 'package:loafncatting_mobile/screens/menu_screen.dart';
 import 'package:loafncatting_mobile/screens/more_screen.dart';
-import 'package:loafncatting_mobile/screens/notifications_screen.dart';
 import 'package:loafncatting_mobile/screens/profile_screen.dart';
 import 'package:loafncatting_mobile/screens/reservation_screen.dart';
 import 'package:provider/provider.dart';
@@ -51,17 +50,11 @@ class _HomeScreenState extends State<HomeScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
         content: Text(
           '${notification.title}\n${notification.content}',
           maxLines: 3,
           overflow: TextOverflow.ellipsis,
-        ),
-        action: SnackBarAction(
-          label: 'Xem',
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const NotificationsScreen()),
-          ),
         ),
       ),
     );

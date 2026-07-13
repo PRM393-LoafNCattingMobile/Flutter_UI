@@ -4,6 +4,7 @@ import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/screens/chat_screen.dart';
 import 'package:loafncatting_mobile/screens/notifications_screen.dart';
+import 'package:loafncatting_mobile/screens/order_history_screen.dart';
 import 'package:loafncatting_mobile/screens/profile_screen.dart';
 import 'package:loafncatting_mobile/screens/store_location_screen.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
@@ -33,6 +34,12 @@ class MoreScreen extends StatelessWidget {
                 subtitle: AppStrings.notificationsMenuSubtitle,
                 screen: const NotificationsScreen(),
                 badgeCount: unreadCount,
+                requiresAuth: true),
+            const _MoreItem(
+                icon: Icons.receipt_long_outlined,
+                title: AppStrings.orderHistoryTitle,
+                subtitle: AppStrings.orderHistoryMenuSubtitle,
+                screen: OrderHistoryScreen(),
                 requiresAuth: true),
             const _MoreItem(
                 icon: Icons.map_outlined,

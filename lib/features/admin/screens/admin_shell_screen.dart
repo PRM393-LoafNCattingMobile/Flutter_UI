@@ -11,7 +11,6 @@ import 'package:loafncatting_mobile/features/admin/screens/admin_more_screen.dar
 import 'package:loafncatting_mobile/features/admin/screens/admin_orders_screen.dart';
 import 'package:loafncatting_mobile/features/admin/screens/admin_reservations_screen.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
-import 'package:loafncatting_mobile/screens/notifications_screen.dart';
 import 'package:provider/provider.dart';
 
 /// Khung điều hướng cho Admin/Staff với 7 tab: Tổng quan, Đơn hàng, Đặt bàn,
@@ -59,17 +58,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
         content: Text(
           '${notification.title}\n${notification.content}',
           maxLines: 3,
           overflow: TextOverflow.ellipsis,
-        ),
-        action: SnackBarAction(
-          label: 'Xem',
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const NotificationsScreen()),
-          ),
         ),
       ),
     );

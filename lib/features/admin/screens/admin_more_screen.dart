@@ -18,6 +18,7 @@ class AdminMoreScreen extends StatelessWidget {
       auth: context.read<AuthProvider>(),
       cart: context.read<CartProvider>(),
       reservations: context.read<ReservationProvider>(),
+      orderHistory: context.read<OrderHistoryProvider>(),
       notifications: context.read<NotificationProvider>(),
       chat: context.read<ChatProvider>(),
     );

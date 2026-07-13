@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/errors/user_friendly_error.dart';
+import 'package:loafncatting_mobile/features/admin/models/admin_models.dart';
 import 'package:loafncatting_mobile/features/chat/services/chat_realtime_service.dart';
 import 'package:loafncatting_mobile/features/notifications/services/notification_realtime_service.dart';
 import 'package:loafncatting_mobile/models/models.dart';
@@ -633,6 +634,22 @@ class ReservationProvider extends LoadableProvider {
   }
 }
 
+class OrderHistoryProvider extends LoadableProvider {
+  OrderHistoryProvider(this.api);
+  final ApiService api;
+  List<Order> orders = [];
+
+  Future<void> load(int userId) async => run(() async {
+        orders = await api.getUserOrders(userId);
+      });
+
+  void clearSession() {
+    resetLoadState();
+    orders = [];
+    notifyListeners();
+  }
+}
+
 class CatProvider extends LoadableProvider {
   CatProvider(this.api);
   final ApiService api;
@@ -791,12 +808,14 @@ class SessionCoordinator {
     required AuthProvider auth,
     required CartProvider cart,
     required ReservationProvider reservations,
+    OrderHistoryProvider? orderHistory,
     required NotificationProvider notifications,
     required ChatProvider chat,
   }) async {
     await auth.logout();
     cart.clearSession();
     reservations.clearSession();
+    orderHistory?.clearSession();
     notifications.clearSession();
     chat.clearSession();
   }

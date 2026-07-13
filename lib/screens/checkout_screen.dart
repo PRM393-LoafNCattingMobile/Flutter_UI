@@ -7,6 +7,7 @@ import 'package:loafncatting_mobile/core/errors/user_friendly_error.dart';
 import 'package:loafncatting_mobile/features/admin/models/admin_models.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/screens/payment_webview_screen.dart';
+import 'package:loafncatting_mobile/services/api_service.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:loafncatting_mobile/widgets/cafe_form_fields.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
@@ -66,7 +67,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       body: CafeSurface(
         child: Builder(
           builder: (context) {
-            if (cart.items.isEmpty) {
+            final hasPendingPayment = pendingPaymentOrder != null;
+            if (cart.items.isEmpty && !hasPendingPayment) {
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
@@ -116,13 +118,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     subtitle: AppStrings.checkoutHeroSubtitle,
                     icon: Icons.receipt_long,
                   ),
-                  _CheckoutSummaryCard(cart: cart),
                   if (loadingPendingPayment) ...[
                     const SizedBox(height: 14),
                     const CafeCard(
                       child: Center(child: CircularProgressIndicator()),
                     ),
-                  ] else if (pendingPaymentOrder != null) ...[
+                  ] else if (hasPendingPayment) ...[
                     const SizedBox(height: 14),
                     _PendingPaymentCard(
                       order: pendingPaymentOrder!,
@@ -137,19 +138,32 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ? null
                           : () => _loadPendingPaymentOrder(auth.user!.userId),
                     ),
+                  ] else ...[
+                    _CheckoutSummaryCard(cart: cart),
+                    const SizedBox(height: 14),
+                    _CheckoutFormCard(
+                      nameController: nameController,
+                      phoneController: phoneController,
+                      noteController: noteController,
+                      paymentMethod: paymentMethod,
+                      onPaymentMethodChanged: (value) {
+                        if (value != null) {
+                          setState(() => paymentMethod = value);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    FilledButton.icon(
+                      onPressed: placing ? null : () => _submitOrder(auth, cart),
+                      icon: placing
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.check_circle_outline),
+                      label: const Text(AppStrings.placeOrderButton),
+                    ),
                   ],
-                  const SizedBox(height: 14),
-                  _CheckoutFormCard(
-                    nameController: nameController,
-                    phoneController: phoneController,
-                    noteController: noteController,
-                    paymentMethod: paymentMethod,
-                    onPaymentMethodChanged: (value) {
-                      if (value != null) {
-                        setState(() => paymentMethod = value);
-                      }
-                    },
-                  ),
                   if (error != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 12),
@@ -157,19 +171,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           style: TextStyle(
                               color: Theme.of(context).colorScheme.error)),
                     ),
-                  const SizedBox(height: 20),
-                  FilledButton.icon(
-                    onPressed: placing || pendingPaymentOrder != null
-                        ? null
-                        : () => _submitOrder(auth, cart),
-                    icon: placing
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.check_circle_outline),
-                    label: const Text(AppStrings.placeOrderButton),
-                  ),
                 ],
               ),
             );
@@ -186,8 +187,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
 
     final api = context.read<AuthProvider>().api;
+    final cart = context.read<CartProvider>();
+    final hadPendingPayment = pendingPaymentOrder != null;
     try {
       final pending = await api.getPendingPaymentOrder(userId);
+      if ((pending != null || hadPendingPayment) && cart.items.isNotEmpty) {
+        await cart.clearSynced(userId);
+      }
+
       if (!mounted) return;
       setState(() {
         pendingPaymentOrder = pending;
@@ -246,6 +253,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       // Chuyển khoản -> đi qua PayOS (QR MB Bank), poll tới khi trả xong.
       if (paymentMethod == AppStrings.bankTransferPaymentMethod) {
         final orderId = order['orderId'] as int;
+        final createdOrder = Order.fromJson(order);
+        await cart.clearSynced(auth.user!.userId);
+        if (!mounted) return;
+        setState(() {
+          pendingPaymentOrder = createdOrder;
+        });
+
         final link = await api.createPaymentLink(orderId);
         if (!mounted) return;
         final paid = await Navigator.push<bool>(
@@ -260,11 +274,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         );
         if (!mounted) return;
         if (paid != true) {
-          setState(() {
-            pendingPaymentOrder = Order.fromJson(order);
-            error =
-                'Chưa hoàn tất thanh toán. Đơn đang chờ thanh toán, bạn có thể thanh toán tiếp bên trên.';
-          });
+          await _refreshPendingAfterUnfinishedPayment(
+            api: api,
+            cart: cart,
+            userId: auth.user!.userId,
+            orderId: orderId,
+            fallbackPendingOrder: createdOrder,
+            pendingMessage:
+                'Chưa hoàn tất thanh toán. Đơn đang chờ thanh toán, bạn có thể thanh toán tiếp bên trên.',
+          );
           return;
         }
       }
@@ -367,19 +385,58 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         if (!mounted) return;
         Navigator.pop(context);
       } else {
-        setState(() {
-          error = 'Đơn #${order.orderId} vẫn đang chờ thanh toán.';
-        });
+        await _refreshPendingAfterUnfinishedPayment(
+          api: auth.api,
+          cart: cart,
+          userId: auth.user!.userId,
+          orderId: order.orderId,
+          fallbackPendingOrder: order,
+        );
       }
     } catch (e) {
       if (mounted) {
-        setState(() => error = friendlyErrorMessage(e));
+        await _refreshPendingAfterUnfinishedPayment(
+          api: auth.api,
+          cart: cart,
+          userId: auth.user!.userId,
+          orderId: order.orderId,
+          fallbackPendingOrder: order,
+          pendingMessage: friendlyErrorMessage(e),
+        );
       }
     } finally {
       if (mounted) {
         setState(() => placing = false);
       }
     }
+  }
+
+  Future<void> _refreshPendingAfterUnfinishedPayment({
+    required ApiService api,
+    required CartProvider cart,
+    required int userId,
+    required int orderId,
+    required Order? fallbackPendingOrder,
+    String? pendingMessage,
+  }) async {
+    Order? pending;
+    try {
+      pending = await api.getPendingPaymentOrder(userId);
+    } catch (_) {
+      pending = fallbackPendingOrder;
+    }
+
+    if ((pending != null || fallbackPendingOrder != null) && cart.items.isNotEmpty) {
+      await cart.clearSynced(userId);
+    }
+
+    if (!mounted) return;
+    setState(() {
+      pendingPaymentOrder = pending;
+      error = pending == null
+          ? 'Thanh toán cho đơn #$orderId đã bị hủy hoặc hết hạn.'
+          : pendingMessage ?? 'Đơn #$orderId vẫn đang chờ thanh toán.';
+    });
   }
 }
 
@@ -493,6 +550,42 @@ class _PendingPaymentCard extends StatelessWidget {
               CafeInfoChip(label: money(order.totalPrice)),
             ],
           ),
+          if (order.items.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Divider(),
+            ...order.items.map(
+              (item) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.productName,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      'x${item.quantity}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: loafMuted,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      money(item.subtotal),
+                      style: moneyTextStyle(
+                        theme.textTheme.titleSmall,
+                        color: loafOrange,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
