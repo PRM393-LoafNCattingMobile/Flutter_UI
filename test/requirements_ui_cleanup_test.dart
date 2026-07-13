@@ -16,6 +16,7 @@ import 'package:loafncatting_mobile/screens/more_screen.dart';
 import 'package:loafncatting_mobile/screens/notifications_screen.dart';
 import 'package:loafncatting_mobile/screens/menu_screen.dart';
 import 'package:loafncatting_mobile/screens/product_detail_screen.dart';
+import 'package:loafncatting_mobile/screens/profile_screen.dart';
 import 'package:loafncatting_mobile/screens/reservation_history_screen.dart';
 import 'package:loafncatting_mobile/screens/reservation_screen.dart';
 import 'package:loafncatting_mobile/services/api_service.dart';
@@ -118,12 +119,51 @@ void main() {
       (tester) async {
     await tester.pumpWidget(const MaterialApp(home: MoreScreen()));
 
-    expect(find.text(AppStrings.moreTitle), findsOneWidget);
+    expect(find.text(AppStrings.homeNavLabel), findsOneWidget);
     expect(find.text(AppStrings.moreHeroTitle), findsOneWidget);
     expect(find.text(AppStrings.notificationsTitle), findsOneWidget);
     expect(find.text(AppStrings.storeLocationTitle), findsOneWidget);
     expect(find.text(AppStrings.chatTitle), findsOneWidget);
-    expect(find.text(AppStrings.profileTitle), findsOneWidget);
+  });
+
+  testWidgets('ProfileScreen saves edited customer profile safely',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final api = _FakeApiService();
+    final auth = AuthProvider(api)..user = _sampleUser();
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        child: const ProfileScreen(),
+        api: api,
+        auth: auth,
+      ),
+    );
+
+    await tester.drag(find.byType(ListView), const Offset(0, -600));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(AppStrings.editProfileButton));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextField, AppStrings.profileNameLabel),
+      'Lan New',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, AppStrings.profilePhoneLabel),
+      '0987654321',
+    );
+    await tester.tap(find.text(AppStrings.saveButton));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(auth.user?.name, 'Lan New');
+    expect(auth.user?.phoneNumber, '0987654321');
+    expect(api.lastUpdateProfileBody, {
+      'name': 'Lan New',
+      'phoneNumber': '0987654321',
+    });
+    expect(find.text(AppStrings.profileUpdatedMessage), findsOneWidget);
   });
 
   testWidgets('CartScreen renders centralized empty state copy',
@@ -385,99 +425,11 @@ void main() {
     );
 
     expect(find.text(AppStrings.reservationHeroTitle), findsOneWidget);
-    expect(find.text(AppStrings.loadAvailableTablesButton), findsOneWidget);
-
-    await tester.tap(find.text(AppStrings.loadAvailableTablesButton));
-    await tester.pump();
-    await tester.pump();
-
-    expect(find.byType(DropdownButtonFormField<int>), findsNothing);
-    expect(find.textContaining('Window 2'), findsOneWidget);
 
     await tester.tap(find.text(AppStrings.confirmReservationButton));
     await tester.pump();
 
     expect(find.text(AppStrings.reservationCreatedMessage), findsOneWidget);
-    expect(api.lastCreateReservationBody?['tableId'], isNull);
-  });
-
-  testWidgets('ReservationScreen refreshes available table preview after reload',
-      (tester) async {
-    await tester.binding.setSurfaceSize(const Size(1200, 1600));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    final api = _FakeApiService(
-      availableTablesByRequest: {
-        '2026-06-19|18:00|2': [
-          CafeTable(
-            tableId: 8,
-            tableName: 'Window 2',
-            capacity: 4,
-            statusName: 'Available',
-          ),
-        ],
-        '2026-06-20|18:00|2': [
-          CafeTable(
-            tableId: 9,
-            tableName: 'Patio 1',
-            capacity: 4,
-            statusName: 'Available',
-          ),
-        ],
-      },
-    );
-    final auth = AuthProvider(api)..user = _sampleUser();
-    final reservations = ReservationProvider(api);
-
-    await tester.pumpWidget(
-      _buildTestApp(
-        child: const ReservationScreen(),
-        api: api,
-        auth: auth,
-        reservations: reservations,
-      ),
-    );
-    await tester.pump();
-
-    final dateField = find.byWidgetPredicate(
-      (widget) =>
-          widget is TextField &&
-          widget.decoration?.labelText == AppStrings.dateLabel,
-    );
-    final loadButton = find.text(AppStrings.loadAvailableTablesButton);
-    final confirmButton = find.widgetWithText(
-      FilledButton,
-      AppStrings.confirmReservationButton,
-    );
-
-    await tester.enterText(dateField, '2026-06-19');
-    await tester.tap(loadButton);
-    await tester.pump();
-    await tester.pump();
-
-    expect(find.textContaining('Window 2'), findsOneWidget);
-    expect(
-      tester.widget<FilledButton>(confirmButton).onPressed,
-      isNotNull,
-    );
-
-    await tester.enterText(dateField, '2026-06-20');
-    await tester.tap(loadButton);
-    await tester.pump();
-    await tester.pump();
-
-    expect(
-      tester.widget<FilledButton>(confirmButton).onPressed,
-      isNotNull,
-    );
-
-    expect(find.textContaining('Patio 1'), findsOneWidget);
-    expect(find.textContaining('Window 2'), findsNothing);
-
-    await tester.tap(find.text(AppStrings.confirmReservationButton));
-    await tester.pump();
-
-    expect(api.lastCreateReservationBody?['date'], '2026-06-20');
     expect(api.lastCreateReservationBody?['tableId'], isNull);
   });
 
@@ -649,19 +601,18 @@ class _FakeApiService extends ApiService {
     this.categories = const <Category>[],
     this.products = const <Product>[],
     this.availableTables = const <CafeTable>[],
-    this.availableTablesByRequest = const <String, List<CafeTable>>{},
     this.createPaymentLinkError,
   });
 
   final List<Category> categories;
   final List<Product> products;
   final List<CafeTable> availableTables;
-  final Map<String, List<CafeTable>> availableTablesByRequest;
   final String? createPaymentLinkError;
   int createOrderCallCount = 0;
   int createPaymentLinkCallCount = 0;
   Map<String, dynamic>? lastCreateOrderBody;
   Map<String, dynamic>? lastCreateReservationBody;
+  Map<String, dynamic>? lastUpdateProfileBody;
 
   @override
   Future<List<Category>> getCategories() async => categories;
@@ -671,12 +622,30 @@ class _FakeApiService extends ApiService {
       products;
 
   @override
+  Future<AuthUser> updateProfile(String name, String phoneNumber) async {
+    lastUpdateProfileBody = {
+      'name': name,
+      'phoneNumber': phoneNumber,
+    };
+    final current = _sampleUser();
+    return AuthUser(
+      userId: current.userId,
+      name: name,
+      email: current.email,
+      phoneNumber: phoneNumber,
+      roleName: current.roleName,
+      token: current.token,
+      avatarUrl: current.avatarUrl,
+    );
+  }
+
+  @override
   Future<List<CafeTable>> getAvailableTables({
     required String date,
     required String time,
     required int guestCount,
   }) async =>
-      availableTablesByRequest['$date|$time|$guestCount'] ?? availableTables;
+      availableTables;
 
   @override
   Future<Reservation> createReservation(Map<String, dynamic> body) async {

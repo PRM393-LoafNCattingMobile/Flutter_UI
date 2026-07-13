@@ -47,6 +47,18 @@ class AppStrings {
       'Tải ảnh JPG/PNG tối đa 1 MB để cập nhật hồ sơ.';
   static const profileAvatarUploadButton = 'Cập nhật ảnh đại diện';
   static const profileAvatarUpdatedMessage = 'Đã cập nhật ảnh đại diện.';
+  static const profileEditButton = 'Chỉnh sửa hồ sơ';
+  static const profileEditTitle = 'Chỉnh sửa hồ sơ';
+  static const editProfileButton = 'Chỉnh sửa hồ sơ';
+  static const editProfileTitle = 'Chỉnh sửa hồ sơ';
+  static const profileUpdatedMessage = 'Đã cập nhật hồ sơ.';
+  static const profileUpdateFailedMessage = 'Không thể cập nhật hồ sơ.';
+  static const profileNameLabel = 'Họ tên';
+  static const profilePhoneLabel = 'Số điện thoại';
+  static const saveButton = 'Lưu';
+  static const cancelButton = 'Hủy';
+  static const nameRequiredMessage = 'Vui lòng nhập tên.';
+  static const phoneRequiredMessage = 'Vui lòng nhập số điện thoại.';
   static const logoutButton = 'Đăng xuất';
 
   static const homeNavLabel = 'Trang chủ';
@@ -54,6 +66,7 @@ class AppStrings {
   static const reservationsNavLabel = 'Đặt bàn';
   static const catsNavLabel = 'Mèo';
   static const profileNavLabel = 'Hồ sơ';
+  static const nameLabel = 'Tên';
   static const emailLabel = 'Địa chỉ email';
   static const phoneLabel = 'Số điện thoại';
 

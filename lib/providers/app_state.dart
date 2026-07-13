@@ -133,6 +133,20 @@ class AuthProvider extends LoadableProvider {
     return error == null;
   }
 
+  Future<bool> updateProfile(String name, String phoneNumber) async {
+    if (user == null) {
+      error = 'Vui lòng đăng nhập để cập nhật hồ sơ.';
+      notifyListeners();
+      return false;
+    }
+
+    await run(() async {
+      user = await api.updateProfile(name.trim(), phoneNumber.trim());
+      await _persistUser();
+    });
+    return error == null;
+  }
+
   Future<void> _persistUser() async {
     final currentUser = user;
     if (currentUser == null) {
@@ -669,8 +683,10 @@ class NotificationProvider extends LoadableProvider {
   StreamSubscription<AppNotification>? _createdSubscription;
   final _popupController = StreamController<AppNotification>.broadcast();
   int? _activeRealtimeUserId;
+  int _activeChatScopes = 0;
 
   Stream<AppNotification> get popupNotifications => _popupController.stream;
+  bool get isChatVisible => _activeChatScopes > 0;
 
   int get unreadCount =>
       notifications.where((notification) => !notification.isRead).length;
@@ -715,10 +731,21 @@ class NotificationProvider extends LoadableProvider {
         notifications = await api.getNotifications(userId);
       });
 
+  void enterChatScope() {
+    _activeChatScopes++;
+  }
+
+  void leaveChatScope() {
+    if (_activeChatScopes > 0) {
+      _activeChatScopes--;
+    }
+  }
+
   void clearSession() {
     resetLoadState();
     notifications = [];
     _activeRealtimeUserId = null;
+    _activeChatScopes = 0;
     _createdSubscription?.cancel();
     _createdSubscription = null;
     _realtime.stop();

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/screens/cart_screen.dart';
+import 'package:loafncatting_mobile/screens/order_history_screen.dart';
 import 'package:loafncatting_mobile/screens/product_detail_screen.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
@@ -747,15 +748,6 @@ class _MenuHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          IconButton.filledTonal(
-            onPressed: () {},
-            icon: const Icon(Icons.menu),
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.white.withValues(alpha: .18),
-              foregroundColor: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 10),
           const CafeIconBadge(icon: Icons.pets, inverted: true, size: 48),
           const SizedBox(width: 12),
           Expanded(
@@ -782,14 +774,22 @@ class _MenuHeader extends StatelessWidget {
               ],
             ),
           ),
+          IconButton(
+            onPressed: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const OrderHistoryScreen())),
+            icon: const Icon(Icons.receipt_long_outlined),
+            color: Colors.white,
+            tooltip: AppStrings.orderHistoryTitle,
+          ),
           Stack(
             clipBehavior: Clip.none,
             children: [
               IconButton(
                 onPressed: () => Navigator.push(context,
                     MaterialPageRoute(builder: (_) => const CartScreen())),
-                icon: const Icon(Icons.receipt_long_outlined),
+                icon: const Icon(Icons.shopping_cart_outlined),
                 color: Colors.white,
+                tooltip: AppStrings.cartTitlePrefix,
               ),
               if (cartCount > 0)
                 Positioned(

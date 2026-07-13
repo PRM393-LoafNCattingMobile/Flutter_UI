@@ -154,6 +154,14 @@ class ApiService {
     await _post('/auth/logout', const {});
   }
 
+  Future<AuthUser> updateProfile(String name, String phoneNumber) async {
+    final data = await _patch('/auth/profile', {
+      'name': name,
+      'phoneNumber': phoneNumber,
+    });
+    return AuthUser.fromJson(data);
+  }
+
   Future<AuthUser> updateAvatar(String? s3Key) async {
     final data = await _patch('/auth/avatar', {'s3Key': s3Key});
     return AuthUser.fromJson(data);
