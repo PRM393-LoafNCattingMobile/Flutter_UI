@@ -102,7 +102,20 @@ class _FakeApi extends ApiService {
       [_product(1, 2), _product(2, 10), _product(3, 0)];
 
   @override
+  Future<List<Category>> getAdminCategories() async =>
+      [Category(categoryId: 1, name: 'Ca phe')];
+
+  @override
+  Future<List<Product>> getAdminProducts(
+          {int? categoryId, String? search}) async =>
+      [_product(1, 2), _product(2, 10), _product(3, 0)];
+
+  @override
   Future<List<Cat>> getCats({String? search}) async =>
+      [_cat(1, workingCatStatus), _cat(2, sickCatStatus)];
+
+  @override
+  Future<List<Cat>> getAdminCats({String? search}) async =>
       [_cat(1, workingCatStatus), _cat(2, sickCatStatus)];
 }
 
@@ -181,5 +194,27 @@ void main() {
     expect(provider.todayReservations, 1);
     expect(provider.lowStockProducts, 2);
     expect(provider.catsNotWorking, 1);
+  });
+
+  test('AdminCatalogProvider can show dashboard low-stock filter', () async {
+    final provider = AdminCatalogProvider(_FakeApi());
+    await provider.load();
+
+    provider.showLowStockProducts();
+
+    expect(provider.lowStockOnly, isTrue);
+    expect(provider.hasProductFilters, isTrue);
+    expect(provider.products.map((product) => product.productId), [1, 3]);
+  });
+
+  test('AdminCatProvider can show dashboard not-working filter', () async {
+    final provider = AdminCatProvider(_FakeApi());
+    await provider.load();
+
+    provider.showNotWorkingCats();
+
+    expect(provider.notWorkingOnly, isTrue);
+    expect(provider.hasCatFilters, isTrue);
+    expect(provider.cats.map((cat) => cat.catId), [2]);
   });
 }

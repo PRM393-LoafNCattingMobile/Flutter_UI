@@ -362,6 +362,11 @@ class _AdminProductActiveFilters extends StatelessWidget {
               label: 'Gi\u1ea3m gi\u00e1',
               onDeleted: provider.clearDiscountFilter,
             ),
+          if (provider.lowStockOnly)
+            _ActiveFilterChip(
+              label: 'S\u1eafp h\u1ebft',
+              onDeleted: provider.clearLowStockFilter,
+            ),
           TextButton(
             onPressed: onResetFilters,
             child: const Text('Reset'),
@@ -420,6 +425,7 @@ class _CatalogFilterSheetState extends State<_CatalogFilterSheet> {
   late RangeValues priceRange;
   late ProductSortOption sortOption;
   late bool discountedOnly;
+  late bool lowStockOnly;
 
   @override
   void initState() {
@@ -431,6 +437,7 @@ class _CatalogFilterSheetState extends State<_CatalogFilterSheet> {
     );
     sortOption = widget.provider.sortOption;
     discountedOnly = widget.provider.discountedOnly;
+    lowStockOnly = widget.provider.lowStockOnly;
   }
 
   @override
@@ -519,6 +526,13 @@ class _CatalogFilterSheetState extends State<_CatalogFilterSheet> {
               value: discountedOnly,
               onChanged: (value) => setState(() => discountedOnly = value),
             ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              activeThumbColor: loafOrange,
+              title: const Text('S\u1ea3n ph\u1ea9m s\u1eafp h\u1ebft'),
+              value: lowStockOnly,
+              onChanged: (value) => setState(() => lowStockOnly = value),
+            ),
             const SizedBox(height: 14),
             FilledButton.icon(
               onPressed: () {
@@ -528,6 +542,7 @@ class _CatalogFilterSheetState extends State<_CatalogFilterSheet> {
                   maxPrice: priceRange.end,
                   sortOption: sortOption,
                   discountedOnly: discountedOnly,
+                  lowStockOnly: lowStockOnly,
                 );
                 Navigator.pop(context);
               },
@@ -549,6 +564,7 @@ class _CatalogFilterSheetState extends State<_CatalogFilterSheet> {
       );
       sortOption = ProductSortOption.defaultOrder;
       discountedOnly = false;
+      lowStockOnly = false;
     });
   }
 }

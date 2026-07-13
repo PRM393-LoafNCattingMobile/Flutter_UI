@@ -360,6 +360,11 @@ class _AdminCatActiveFilters extends StatelessWidget {
               label: provider.genderFilterName!,
               onDeleted: () => provider.applyGenderFilter(null),
             ),
+          if (provider.notWorkingOnly)
+            _ActiveFilterChip(
+              label: 'M\u00e8o ngh\u1ec9/\u1ed1m',
+              onDeleted: provider.clearNotWorkingFilter,
+            ),
           TextButton(
             onPressed: onResetFilters,
             child: const Text('Reset'),
@@ -421,12 +426,14 @@ class _CatFilterSheet extends StatefulWidget {
 class _CatFilterSheetState extends State<_CatFilterSheet> {
   String? statusName;
   String? genderName;
+  bool notWorkingOnly = false;
 
   @override
   void initState() {
     super.initState();
     statusName = widget.provider.statusFilterName;
     genderName = widget.provider.genderFilterName;
+    notWorkingOnly = widget.provider.notWorkingOnly;
   }
 
   @override
@@ -500,11 +507,19 @@ class _CatFilterSheetState extends State<_CatFilterSheet> {
                 ),
               ],
             ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              activeThumbColor: loafOrange,
+              title: const Text('M\u00e8o ngh\u1ec9/\u1ed1m'),
+              value: notWorkingOnly,
+              onChanged: (value) => setState(() => notWorkingOnly = value),
+            ),
             const SizedBox(height: 14),
             FilledButton.icon(
               onPressed: () {
                 widget.provider.applyStatusFilter(statusName);
                 widget.provider.applyGenderFilter(genderName);
+                widget.provider.applyNotWorkingFilter(notWorkingOnly);
                 Navigator.pop(context);
               },
               icon: const Icon(Icons.check),
@@ -520,6 +535,7 @@ class _CatFilterSheetState extends State<_CatFilterSheet> {
     setState(() {
       statusName = null;
       genderName = null;
+      notWorkingOnly = false;
     });
   }
 }

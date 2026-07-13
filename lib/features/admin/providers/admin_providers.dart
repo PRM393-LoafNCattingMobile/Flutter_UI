@@ -7,6 +7,8 @@ import 'package:loafncatting_mobile/services/api_service.dart';
 
 /// Ngưỡng tồn kho thấp dùng cho thẻ cảnh báo ở Dashboard.
 const int kLowStockThreshold = 5;
+const String kPendingOrderStatusName = '\u0110ang ch\u1edd';
+const String kWorkingCatStatusName = '\u0110ang l\u00e0m vi\u1ec7c';
 
 /// Tải các danh mục tra cứu (vai trò, trạng thái, danh mục, giới tính...) để đổ
 /// vào dropdown của các form admin/staff. Tải một lần rồi dùng lại.
@@ -38,6 +40,7 @@ class AdminCatalogProvider extends LoadableProvider {
   double? _maxPrice;
   ProductSortOption sortOption = ProductSortOption.defaultOrder;
   bool discountedOnly = false;
+  bool lowStockOnly = false;
 
   static const double _priceStep = 10000;
   static const double _minimumPriceCeiling = 100000;
@@ -74,7 +77,8 @@ class AdminCatalogProvider extends LoadableProvider {
       availabilityFilter != ProductAvailabilityFilter.all ||
       hasPriceFilter ||
       sortOption != ProductSortOption.defaultOrder ||
-      discountedOnly;
+      discountedOnly ||
+      lowStockOnly;
 
   List<Product> get products {
     Iterable<Product> filtered = _products;
@@ -107,6 +111,11 @@ class AdminCatalogProvider extends LoadableProvider {
 
     if (discountedOnly) {
       filtered = filtered.where((product) => product.discountPrice != null);
+    }
+
+    if (lowStockOnly) {
+      filtered = filtered
+          .where((product) => product.unitInStock <= kLowStockThreshold);
     }
 
     final items = filtered.toList();
@@ -147,6 +156,7 @@ class AdminCatalogProvider extends LoadableProvider {
     required double maxPrice,
     required ProductSortOption sortOption,
     required bool discountedOnly,
+    required bool lowStockOnly,
   }) {
     availabilityFilter = availability;
     final nextMin = _clampPrice(_snapPrice(minPrice));
@@ -156,6 +166,7 @@ class AdminCatalogProvider extends LoadableProvider {
     _maxPrice = resolvedMax >= priceFilterCeiling ? null : resolvedMax;
     this.sortOption = sortOption;
     this.discountedOnly = discountedOnly;
+    this.lowStockOnly = lowStockOnly;
     notifyListeners();
   }
 
@@ -167,6 +178,7 @@ class AdminCatalogProvider extends LoadableProvider {
     _maxPrice = null;
     sortOption = ProductSortOption.defaultOrder;
     discountedOnly = false;
+    lowStockOnly = false;
     notifyListeners();
   }
 
@@ -198,6 +210,23 @@ class AdminCatalogProvider extends LoadableProvider {
 
   void clearDiscountFilter() {
     discountedOnly = false;
+    notifyListeners();
+  }
+
+  void clearLowStockFilter() {
+    lowStockOnly = false;
+    notifyListeners();
+  }
+
+  void showLowStockProducts() {
+    search = '';
+    selectedCategoryId = null;
+    availabilityFilter = ProductAvailabilityFilter.all;
+    _minPrice = priceFilterFloor;
+    _maxPrice = null;
+    sortOption = ProductSortOption.defaultOrder;
+    discountedOnly = false;
+    lowStockOnly = true;
     notifyListeners();
   }
 
@@ -270,11 +299,13 @@ class AdminCatProvider extends LoadableProvider {
   String search = '';
   String? statusFilterName;
   String? genderFilterName;
+  bool notWorkingOnly = false;
 
   bool get hasCatFilters =>
       search.trim().isNotEmpty ||
       statusFilterName != null ||
-      genderFilterName != null;
+      genderFilterName != null ||
+      notWorkingOnly;
 
   List<Cat> get cats {
     Iterable<Cat> filtered = _cats;
@@ -300,6 +331,11 @@ class AdminCatProvider extends LoadableProvider {
       filtered = filtered.where((cat) => cat.genderName == genderName);
     }
 
+    if (notWorkingOnly) {
+      filtered =
+          filtered.where((cat) => cat.statusName != kWorkingCatStatusName);
+    }
+
     return filtered.toList();
   }
 
@@ -322,15 +358,34 @@ class AdminCatProvider extends LoadableProvider {
     notifyListeners();
   }
 
+  void applyNotWorkingFilter(bool value) {
+    notWorkingOnly = value;
+    notifyListeners();
+  }
+
   void resetCatFilters() {
     search = '';
     statusFilterName = null;
     genderFilterName = null;
+    notWorkingOnly = false;
     notifyListeners();
   }
 
   void clearSearchFilter() {
     search = '';
+    notifyListeners();
+  }
+
+  void clearNotWorkingFilter() {
+    notWorkingOnly = false;
+    notifyListeners();
+  }
+
+  void showNotWorkingCats() {
+    search = '';
+    statusFilterName = null;
+    genderFilterName = null;
+    notWorkingOnly = true;
     notifyListeners();
   }
 
@@ -593,13 +648,14 @@ class DashboardProvider extends LoadableProvider {
         final products = await api.getProducts();
         final cats = await api.getCats();
 
-        pendingOrders =
-            orders.where((order) => order.statusName == 'Đang chờ').length;
+        pendingOrders = orders
+            .where((order) => order.statusName == kPendingOrderStatusName)
+            .length;
         todayReservations = reservations.length;
         lowStockProducts = products
             .where((product) => product.unitInStock <= kLowStockThreshold)
             .length;
         catsNotWorking =
-            cats.where((cat) => cat.statusName != 'Đang làm việc').length;
+            cats.where((cat) => cat.statusName != kWorkingCatStatusName).length;
       });
 }
