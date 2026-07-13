@@ -80,8 +80,10 @@ class _AdminReservationsScreenState extends State<AdminReservationsScreen> {
             AdminStatusFilterBar(
               options: lookups?.reservationStatuses ?? const [],
               selectedId: provider.statusFilter,
-              onChanged: (statusId) =>
-                  provider.applyFilters(statusId: statusId),
+              selectedDate: provider.dateFilter,
+              onChanged: provider.applyStatusFilter,
+              onDateChanged: provider.applyDateFilter,
+              onReset: provider.clearFilters,
             ),
             Expanded(child: _buildBody(provider)),
           ],
@@ -98,7 +100,9 @@ class _AdminReservationsScreenState extends State<AdminReservationsScreen> {
       return ErrorView(provider.error!, onRetry: provider.load);
     }
     if (provider.reservations.isEmpty) {
-      return const EmptyView(AppStrings.adminReservationsEmptyMessage);
+      return EmptyView(provider.hasFilters
+          ? 'Kh\u00f4ng t\u00ecm th\u1ea5y l\u01b0\u1ee3t \u0111\u1eb7t b\u00e0n ph\u00f9 h\u1ee3p.'
+          : AppStrings.adminReservationsEmptyMessage);
     }
     return RefreshIndicator(
       onRefresh: provider.load,
