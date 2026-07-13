@@ -141,41 +141,47 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     final screens = _screens;
     return Scaffold(
       body: screens[index],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: index,
-        height: 76,
-        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
-        onDestinationSelected: (value) => setState(() => index = value),
-        destinations: const [
-          NavigationDestination(
-              icon: Icon(Icons.dashboard_outlined),
-              selectedIcon: Icon(Icons.dashboard),
-              label: AppStrings.adminDashboardNavLabel),
-          NavigationDestination(
-              icon: Icon(Icons.receipt_long_outlined),
-              selectedIcon: Icon(Icons.receipt_long),
-              label: AppStrings.adminOrdersNavLabel),
-          NavigationDestination(
-              icon: Icon(Icons.event_outlined),
-              selectedIcon: Icon(Icons.event),
-              label: AppStrings.adminReservationsNavLabel),
-          NavigationDestination(
-              icon: Icon(Icons.local_cafe_outlined),
-              selectedIcon: Icon(Icons.local_cafe),
-              label: AppStrings.adminCatalogNavLabel),
-          NavigationDestination(
-              icon: Icon(Icons.pets_outlined),
-              selectedIcon: Icon(Icons.pets),
-              label: AppStrings.adminCatsNavLabel),
-          NavigationDestination(
-              icon: Icon(Icons.chat_bubble_outline),
-              selectedIcon: Icon(Icons.chat_bubble),
-              label: AppStrings.adminChatNavLabel),
-          NavigationDestination(
-              icon: Icon(Icons.more_horiz),
-              selectedIcon: Icon(Icons.more_horiz),
-              label: AppStrings.adminMoreNavLabel),
-        ],
+      bottomNavigationBar: MediaQuery.withClampedTextScaling(
+        // Máy thật (nhất là Samsung/One UI) thường để cỡ chữ hệ thống lớn hơn
+        // emulator -> nhãn tab bị xuống 2 dòng và lệch so với icon. Khóa nhãn
+        // navbar ở scale 1.0 để hiển thị đồng nhất mọi thiết bị.
+        maxScaleFactor: 1.0,
+        child: NavigationBar(
+          selectedIndex: index,
+          height: 76,
+          labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+          onDestinationSelected: (value) => setState(() => index = value),
+          destinations: const [
+            NavigationDestination(
+                icon: Icon(Icons.dashboard_outlined),
+                selectedIcon: Icon(Icons.dashboard),
+                label: AppStrings.adminDashboardNavLabel),
+            NavigationDestination(
+                icon: Icon(Icons.receipt_long_outlined),
+                selectedIcon: Icon(Icons.receipt_long),
+                label: AppStrings.adminOrdersNavLabel),
+            NavigationDestination(
+                icon: Icon(Icons.event_outlined),
+                selectedIcon: Icon(Icons.event),
+                label: AppStrings.adminReservationsNavLabel),
+            NavigationDestination(
+                icon: Icon(Icons.local_cafe_outlined),
+                selectedIcon: Icon(Icons.local_cafe),
+                label: AppStrings.adminCatalogNavLabel),
+            NavigationDestination(
+                icon: Icon(Icons.pets_outlined),
+                selectedIcon: Icon(Icons.pets),
+                label: AppStrings.adminCatsNavLabel),
+            NavigationDestination(
+                icon: Icon(Icons.chat_bubble_outline),
+                selectedIcon: Icon(Icons.chat_bubble),
+                label: AppStrings.adminChatNavLabel),
+            NavigationDestination(
+                icon: Icon(Icons.more_horiz),
+                selectedIcon: Icon(Icons.more_horiz),
+                label: AppStrings.adminMoreNavLabel),
+          ],
+        ),
       ),
     );
   }

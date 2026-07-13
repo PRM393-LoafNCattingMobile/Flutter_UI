@@ -4,8 +4,6 @@ import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/screens/chat_screen.dart';
 import 'package:loafncatting_mobile/screens/notifications_screen.dart';
-import 'package:loafncatting_mobile/screens/order_history_screen.dart';
-import 'package:loafncatting_mobile/screens/profile_screen.dart';
 import 'package:loafncatting_mobile/screens/store_location_screen.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
@@ -18,7 +16,7 @@ class MoreScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final unreadCount = _maybeWatchNotifications(context)?.unreadCount ?? 0;
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.moreTitle)),
+      appBar: AppBar(title: const Text(AppStrings.homeNavLabel)),
       body: CafeSurface(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -36,12 +34,6 @@ class MoreScreen extends StatelessWidget {
                 badgeCount: unreadCount,
                 requiresAuth: true),
             const _MoreItem(
-                icon: Icons.receipt_long_outlined,
-                title: AppStrings.orderHistoryTitle,
-                subtitle: AppStrings.orderHistoryMenuSubtitle,
-                screen: OrderHistoryScreen(),
-                requiresAuth: true),
-            const _MoreItem(
                 icon: Icons.map_outlined,
                 title: AppStrings.storeLocationTitle,
                 subtitle: AppStrings.storeLocationMenuSubtitle,
@@ -52,11 +44,6 @@ class MoreScreen extends StatelessWidget {
                 subtitle: AppStrings.chatMenuSubtitle,
                 screen: ChatScreen(),
                 requiresAuth: true),
-            const _MoreItem(
-                icon: Icons.person_outline,
-                title: AppStrings.profileTitle,
-                subtitle: AppStrings.profileMenuSubtitle,
-                screen: ProfileScreen()),
           ],
         ),
       ),

@@ -137,13 +137,7 @@ class _CatHeader extends StatelessWidget {
           10, MediaQuery.of(context).padding.top + 10, 16, 8),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () {
-              if (Navigator.canPop(context)) Navigator.pop(context);
-            },
-            icon: const Icon(Icons.arrow_back),
-            color: loafBrown,
-          ),
+          const SizedBox(width: 46),
           Expanded(
             child: Text(
               'Các bé mèo',

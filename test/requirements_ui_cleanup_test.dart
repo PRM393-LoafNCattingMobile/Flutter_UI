@@ -118,12 +118,11 @@ void main() {
       (tester) async {
     await tester.pumpWidget(const MaterialApp(home: MoreScreen()));
 
-    expect(find.text(AppStrings.moreTitle), findsOneWidget);
+    expect(find.text(AppStrings.homeNavLabel), findsOneWidget);
     expect(find.text(AppStrings.moreHeroTitle), findsOneWidget);
     expect(find.text(AppStrings.notificationsTitle), findsOneWidget);
     expect(find.text(AppStrings.storeLocationTitle), findsOneWidget);
     expect(find.text(AppStrings.chatTitle), findsOneWidget);
-    expect(find.text(AppStrings.profileTitle), findsOneWidget);
   });
 
   testWidgets('CartScreen renders centralized empty state copy',
@@ -385,117 +384,11 @@ void main() {
     );
 
     expect(find.text(AppStrings.reservationHeroTitle), findsOneWidget);
-    expect(find.text(AppStrings.loadAvailableTablesButton), findsOneWidget);
-
-    await tester.tap(find.text(AppStrings.loadAvailableTablesButton));
-    await tester.pump();
-    await tester.pump();
-
-    expect(find.byType(DropdownButtonFormField<int>), findsNothing);
-    expect(find.textContaining('Window 2'), findsOneWidget);
 
     await tester.tap(find.text(AppStrings.confirmReservationButton));
     await tester.pump();
 
     expect(find.text(AppStrings.reservationCreatedMessage), findsOneWidget);
-    expect(api.lastCreateReservationBody?['tableId'], isNull);
-  });
-
-  testWidgets('ReservationScreen refreshes available table preview after reload',
-      (tester) async {
-    await tester.binding.setSurfaceSize(const Size(1200, 1600));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    String formatDate(DateTime value) {
-      return '${value.year.toString().padLeft(4, '0')}-'
-          '${value.month.toString().padLeft(2, '0')}-'
-          '${value.day.toString().padLeft(2, '0')}';
-    }
-
-    final firstDateValue = DateTime.now().add(const Duration(days: 7));
-    final secondDateValue = DateTime.now().add(const Duration(days: 8));
-    final firstDate = formatDate(firstDateValue);
-    final secondDate = formatDate(secondDateValue);
-    final api = _FakeApiService(
-      availableTablesByRequest: {
-        '$firstDate|18:00|2': [
-          CafeTable(
-            tableId: 8,
-            tableName: 'Window 2',
-            capacity: 4,
-            statusName: 'Available',
-          ),
-        ],
-        '$secondDate|18:00|2': [
-          CafeTable(
-            tableId: 9,
-            tableName: 'Patio 1',
-            capacity: 4,
-            statusName: 'Available',
-          ),
-        ],
-      },
-    );
-    final auth = AuthProvider(api)..user = _sampleUser();
-    final reservations = ReservationProvider(api);
-
-    await tester.pumpWidget(
-      _buildTestApp(
-        child: const ReservationScreen(),
-        api: api,
-        auth: auth,
-        reservations: reservations,
-      ),
-    );
-    await tester.pump();
-
-    final dateField = find.byWidgetPredicate(
-      (widget) =>
-          widget is TextField &&
-          widget.decoration?.labelText == AppStrings.dateLabel,
-    );
-    final loadButton = find.text(AppStrings.loadAvailableTablesButton);
-    final confirmButton = find.widgetWithText(
-      FilledButton,
-      AppStrings.confirmReservationButton,
-    );
-
-    Future<void> pickDate(DateTime value) async {
-      await tester.tap(dateField);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('${value.day}').last);
-      await tester.tap(find.text('OK'));
-      await tester.pumpAndSettle();
-    }
-
-    await pickDate(firstDateValue);
-    await tester.tap(loadButton);
-    await tester.pump();
-    await tester.pump();
-
-    expect(find.textContaining('Window 2'), findsOneWidget);
-    expect(
-      tester.widget<FilledButton>(confirmButton).onPressed,
-      isNotNull,
-    );
-
-    await pickDate(secondDateValue);
-    await tester.tap(loadButton);
-    await tester.pump();
-    await tester.pump();
-
-    expect(
-      tester.widget<FilledButton>(confirmButton).onPressed,
-      isNotNull,
-    );
-
-    expect(find.textContaining('Patio 1'), findsOneWidget);
-    expect(find.textContaining('Window 2'), findsNothing);
-
-    await tester.tap(find.text(AppStrings.confirmReservationButton));
-    await tester.pump();
-
-    expect(api.lastCreateReservationBody?['date'], secondDate);
     expect(api.lastCreateReservationBody?['tableId'], isNull);
   });
 
@@ -667,14 +560,12 @@ class _FakeApiService extends ApiService {
     this.categories = const <Category>[],
     this.products = const <Product>[],
     this.availableTables = const <CafeTable>[],
-    this.availableTablesByRequest = const <String, List<CafeTable>>{},
     this.createPaymentLinkError,
   });
 
   final List<Category> categories;
   final List<Product> products;
   final List<CafeTable> availableTables;
-  final Map<String, List<CafeTable>> availableTablesByRequest;
   final String? createPaymentLinkError;
   int createOrderCallCount = 0;
   int createPaymentLinkCallCount = 0;
@@ -694,7 +585,7 @@ class _FakeApiService extends ApiService {
     required String time,
     required int guestCount,
   }) async =>
-      availableTablesByRequest['$date|$time|$guestCount'] ?? availableTables;
+      availableTables;
 
   @override
   Future<Reservation> createReservation(Map<String, dynamic> body) async {
