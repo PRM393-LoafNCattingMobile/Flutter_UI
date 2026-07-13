@@ -15,14 +15,19 @@ class ReservationScreen extends StatefulWidget {
 }
 
 class _ReservationScreenState extends State<ReservationScreen> {
-  final dateController = TextEditingController(
-      text: DateTime.now().toIso8601String().substring(0, 10));
-  final timeController = TextEditingController(text: '18:00');
+  final dateController = TextEditingController();
+  final timeController = TextEditingController();
   final guestController = TextEditingController(text: '2');
   final nameController = TextEditingController();
   final phoneController = TextEditingController();
   final noteController = TextEditingController();
   bool didSeedUser = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _seedInitialReservationDateTime();
+  }
 
   @override
   void didChangeDependencies() {
@@ -45,6 +50,57 @@ class _ReservationScreenState extends State<ReservationScreen> {
     phoneController.dispose();
     noteController.dispose();
     super.dispose();
+  }
+
+  void _seedInitialReservationDateTime() {
+    var date = _dateOnly(DateTime.now());
+    var slots = _availableTimeSlotsForDate(date);
+    if (slots.isEmpty) {
+      date = date.add(const Duration(days: 1));
+      slots = _availableTimeSlotsForDate(date);
+    }
+
+    dateController.text = _formatDate(date);
+    timeController.text = _preferredTimeSlot(slots);
+  }
+
+  DateTime _selectedDate() =>
+      _parseDate(dateController.text) ?? _dateOnly(DateTime.now());
+
+  Future<void> _pickDate() async {
+    final today = _dateOnly(DateTime.now());
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate().isBefore(today) ? today : _selectedDate(),
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 60)),
+    );
+    if (picked == null || !mounted) return;
+
+    final date = _dateOnly(picked);
+    final slots = _availableTimeSlotsForDate(date);
+    setState(() {
+      dateController.text = _formatDate(date);
+      timeController.text = slots.contains(timeController.text)
+          ? timeController.text
+          : _preferredTimeSlot(slots);
+    });
+  }
+
+  bool _ensureFutureReservationDateTime() {
+    final date = _selectedDate();
+    final slots = _availableTimeSlotsForDate(date);
+    if (timeController.text.isEmpty || !slots.contains(timeController.text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng chọn khung giờ đặt bàn trong tương lai.'),
+        ),
+      );
+      setState(() => timeController.text = _preferredTimeSlot(slots));
+      return false;
+    }
+
+    return true;
   }
 
   @override
@@ -95,6 +151,8 @@ class _ReservationScreenState extends State<ReservationScreen> {
               );
             }
 
+            final selectedDate = _selectedDate();
+            final availableTimeSlots = _availableTimeSlotsForDate(selectedDate);
             return ListView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
               children: [
@@ -106,9 +164,18 @@ class _ReservationScreenState extends State<ReservationScreen> {
                 _ReservationDetailsCard(
                   provider: provider,
                   dateController: dateController,
-                  timeController: timeController,
                   guestController: guestController,
+                  timeSlots: availableTimeSlots,
+                  selectedTime: availableTimeSlots.contains(timeController.text)
+                      ? timeController.text
+                      : null,
+                  onDateTap: _pickDate,
+                  onTimeChanged: (value) {
+                    if (value == null) return;
+                    setState(() => timeController.text = value);
+                  },
                   onLoadTables: () async {
+                    if (!_ensureFutureReservationDateTime()) return;
                     await provider.loadAvailable(
                       dateController.text,
                       timeController.text,
@@ -131,9 +198,10 @@ class _ReservationScreenState extends State<ReservationScreen> {
                   ),
                 const SizedBox(height: 16),
                 FilledButton.icon(
-                  onPressed: provider.isLoading
+                  onPressed: provider.isLoading || timeController.text.isEmpty
                       ? null
                       : () async {
+                          if (!_ensureFutureReservationDateTime()) return;
                           final ok = await provider.create({
                             'userId': auth.user!.userId,
                             'date': dateController.text,
@@ -168,19 +236,68 @@ class _ReservationScreenState extends State<ReservationScreen> {
   }
 }
 
+DateTime _dateOnly(DateTime value) => DateTime(value.year, value.month, value.day);
+
+String _formatDate(DateTime date) {
+  final month = date.month.toString().padLeft(2, '0');
+  final day = date.day.toString().padLeft(2, '0');
+  return '${date.year}-$month-$day';
+}
+
+DateTime? _parseDate(String value) {
+  try {
+    final parts = value.split('-').map(int.parse).toList();
+    if (parts.length != 3) return null;
+    return DateTime(parts[0], parts[1], parts[2]);
+  } catch (_) {
+    return null;
+  }
+}
+
+DateTime _slotDateTime(DateTime date, String slot) {
+  final parts = slot.split(':').map(int.parse).toList();
+  return DateTime(date.year, date.month, date.day, parts[0], parts[1]);
+}
+
+List<String> _availableTimeSlotsForDate(DateTime date) {
+  final now = DateTime.now();
+  final slots = <String>[];
+  for (var minutes = 8 * 60; minutes <= 21 * 60; minutes += 30) {
+    final hour = minutes ~/ 60;
+    final minute = minutes % 60;
+    final slot = '${hour.toString().padLeft(2, '0')}:'
+        '${minute.toString().padLeft(2, '0')}';
+    if (_slotDateTime(date, slot).isAfter(now)) {
+      slots.add(slot);
+    }
+  }
+  return slots;
+}
+
+String _preferredTimeSlot(List<String> slots) {
+  if (slots.contains('18:00')) return '18:00';
+  return slots.isEmpty ? '' : slots.first;
+}
+
 class _ReservationDetailsCard extends StatelessWidget {
   const _ReservationDetailsCard({
     required this.provider,
     required this.dateController,
-    required this.timeController,
     required this.guestController,
+    required this.timeSlots,
+    required this.selectedTime,
+    required this.onDateTap,
+    required this.onTimeChanged,
     required this.onLoadTables,
   });
 
   final ReservationProvider provider;
   final TextEditingController dateController;
-  final TextEditingController timeController;
   final TextEditingController guestController;
+  final List<String> timeSlots;
+  final String? selectedTime;
+  final VoidCallback onDateTap;
+  final ValueChanged<String?> onTimeChanged;
   final VoidCallback onLoadTables;
 
   @override
@@ -194,6 +311,8 @@ class _ReservationDetailsCard extends StatelessWidget {
               Expanded(
                 child: TextField(
                   controller: dateController,
+                  readOnly: true,
+                  onTap: onDateTap,
                   decoration: const InputDecoration(
                     labelText: AppStrings.dateLabel,
                     prefixIcon: Icon(Icons.calendar_today_outlined),
@@ -202,12 +321,22 @@ class _ReservationDetailsCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: TextField(
-                  controller: timeController,
+                child: DropdownButtonFormField<String>(
+                  initialValue: selectedTime,
+                  items: timeSlots
+                      .map(
+                        (slot) => DropdownMenuItem(
+                          value: slot,
+                          child: Text(slot),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: timeSlots.isEmpty ? null : onTimeChanged,
                   decoration: const InputDecoration(
                     labelText: AppStrings.timeLabel,
                     prefixIcon: Icon(Icons.schedule),
                   ),
+                  hint: const Text('Hết khung giờ'),
                 ),
               ),
             ],

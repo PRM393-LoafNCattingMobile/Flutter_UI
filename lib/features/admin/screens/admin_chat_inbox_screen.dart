@@ -3,6 +3,7 @@ import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/features/admin/providers/admin_chat_providers.dart';
 import 'package:loafncatting_mobile/features/admin/screens/admin_chat_detail_screen.dart';
 import 'package:loafncatting_mobile/features/admin/widgets/admin_chat_conversation_tile.dart';
+import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
 import 'package:loafncatting_mobile/widgets/state_views.dart';
 import 'package:provider/provider.dart';
@@ -15,6 +16,9 @@ class AdminChatInboxScreen extends StatefulWidget {
 }
 
 class _AdminChatInboxScreenState extends State<AdminChatInboxScreen> {
+  bool _enteredChatScope = false;
+  NotificationProvider? _notifications;
+
   @override
   void initState() {
     super.initState();
@@ -22,6 +26,24 @@ class _AdminChatInboxScreenState extends State<AdminChatInboxScreen> {
       if (!mounted) return;
       context.read<AdminChatInboxProvider>().load();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_enteredChatScope) {
+      _notifications = context.read<NotificationProvider>();
+      _notifications!.enterChatScope();
+      _enteredChatScope = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_enteredChatScope) {
+      _notifications?.leaveChatScope();
+    }
+    super.dispose();
   }
 
   @override

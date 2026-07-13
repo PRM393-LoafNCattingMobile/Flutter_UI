@@ -55,6 +55,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
 
   void _showNotificationPopup(AppNotification notification) {
     if (!mounted) return;
+    final notifications = _maybeProvider<NotificationProvider>(context);
+    if (notification.type == 'chat' && notifications?.isChatVisible == true) {
+      return;
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,

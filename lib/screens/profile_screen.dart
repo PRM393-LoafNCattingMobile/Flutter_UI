@@ -18,6 +18,73 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _uploadingAvatar = false;
 
+  Future<void> _editProfile(AuthProvider auth) async {
+    final user = auth.user;
+    if (user == null) return;
+
+    final nameController = TextEditingController(text: user.name);
+    final phoneController = TextEditingController(text: user.phoneNumber);
+    final result = await showDialog<({String name, String phoneNumber})>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text(AppStrings.profileEditTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              textInputAction: TextInputAction.next,
+              decoration: const InputDecoration(
+                labelText: AppStrings.profileNameLabel,
+                prefixIcon: Icon(Icons.person_outline),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                labelText: AppStrings.profilePhoneLabel,
+                prefixIcon: Icon(Icons.phone_outlined),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text(AppStrings.cancelButton),
+          ),
+          FilledButton(
+            onPressed: () {
+              final name = nameController.text.trim();
+              final phoneNumber = phoneController.text.trim();
+              if (name.isEmpty || phoneNumber.isEmpty) return;
+              Navigator.pop(
+                dialogContext,
+                (name: name, phoneNumber: phoneNumber),
+              );
+            },
+            child: const Text(AppStrings.saveButton),
+          ),
+        ],
+      ),
+    );
+    nameController.dispose();
+    phoneController.dispose();
+    if (result == null || !mounted) return;
+
+    final ok = await auth.updateProfile(result.name, result.phoneNumber);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok
+            ? AppStrings.profileUpdatedMessage
+            : (auth.error ?? AppStrings.profileUpdatedMessage)),
+      ),
+    );
+  }
+
   Future<void> _updateAvatar(AuthProvider auth) async {
     if (auth.user == null || _uploadingAvatar) return;
 
@@ -115,6 +182,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 children: [
                   _ProfileRow(
+                      icon: Icons.person_outline,
+                      label: AppStrings.profileNameLabel,
+                      value: user?.name ?? ''),
+                  const Divider(height: 22),
+                  _ProfileRow(
                       icon: Icons.mail_outline,
                       label: AppStrings.emailLabel,
                       value: user?.email ?? ''),
@@ -126,6 +198,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
+            if (user != null) ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: auth.isLoading ? null : () => _editProfile(auth),
+                icon: const Icon(Icons.edit_outlined),
+                label: const Text(AppStrings.profileEditButton),
+              ),
+            ],
             const SizedBox(height: 18),
             FilledButton.icon(
               onPressed: () async {

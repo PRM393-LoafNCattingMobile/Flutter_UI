@@ -406,9 +406,19 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1200, 1600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
+    String formatDate(DateTime value) {
+      return '${value.year.toString().padLeft(4, '0')}-'
+          '${value.month.toString().padLeft(2, '0')}-'
+          '${value.day.toString().padLeft(2, '0')}';
+    }
+
+    final firstDateValue = DateTime.now().add(const Duration(days: 7));
+    final secondDateValue = DateTime.now().add(const Duration(days: 8));
+    final firstDate = formatDate(firstDateValue);
+    final secondDate = formatDate(secondDateValue);
     final api = _FakeApiService(
       availableTablesByRequest: {
-        '2026-06-19|18:00|2': [
+        '$firstDate|18:00|2': [
           CafeTable(
             tableId: 8,
             tableName: 'Window 2',
@@ -416,7 +426,7 @@ void main() {
             statusName: 'Available',
           ),
         ],
-        '2026-06-20|18:00|2': [
+        '$secondDate|18:00|2': [
           CafeTable(
             tableId: 9,
             tableName: 'Patio 1',
@@ -450,7 +460,15 @@ void main() {
       AppStrings.confirmReservationButton,
     );
 
-    await tester.enterText(dateField, '2026-06-19');
+    Future<void> pickDate(DateTime value) async {
+      await tester.tap(dateField);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('${value.day}').last);
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+    }
+
+    await pickDate(firstDateValue);
     await tester.tap(loadButton);
     await tester.pump();
     await tester.pump();
@@ -461,7 +479,7 @@ void main() {
       isNotNull,
     );
 
-    await tester.enterText(dateField, '2026-06-20');
+    await pickDate(secondDateValue);
     await tester.tap(loadButton);
     await tester.pump();
     await tester.pump();
@@ -477,7 +495,7 @@ void main() {
     await tester.tap(find.text(AppStrings.confirmReservationButton));
     await tester.pump();
 
-    expect(api.lastCreateReservationBody?['date'], '2026-06-20');
+    expect(api.lastCreateReservationBody?['date'], secondDate);
     expect(api.lastCreateReservationBody?['tableId'], isNull);
   });
 

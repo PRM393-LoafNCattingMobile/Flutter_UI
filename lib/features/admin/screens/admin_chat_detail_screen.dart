@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/features/admin/providers/admin_chat_providers.dart';
 import 'package:loafncatting_mobile/features/admin/widgets/admin_chat_bubble.dart';
+import 'package:loafncatting_mobile/models/models.dart';
+import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
 import 'package:loafncatting_mobile/widgets/state_views.dart';
 import 'package:provider/provider.dart';
@@ -22,6 +24,10 @@ class AdminChatDetailScreen extends StatefulWidget {
 
 class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
   final _controller = TextEditingController();
+  final _scrollController = ScrollController();
+  bool _enteredChatScope = false;
+  String? _lastScrollSignature;
+  NotificationProvider? _notifications;
 
   @override
   void initState() {
@@ -33,9 +39,50 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_enteredChatScope) {
+      _notifications = context.read<NotificationProvider>();
+      _notifications!.enterChatScope();
+      _enteredChatScope = true;
+    }
+  }
+
+  @override
   void dispose() {
+    if (_enteredChatScope) {
+      _notifications?.leaveChatScope();
+    }
     _controller.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _scrollToBottom({bool animated = true}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final target = _scrollController.position.maxScrollExtent;
+      if (animated) {
+        _scrollController.animateTo(
+          target,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
+      } else {
+        _scrollController.jumpTo(target);
+      }
+    });
+  }
+
+  void _syncScrollPosition(List<ChatMessage> messages) {
+    final signature = messages.isEmpty
+        ? 'empty'
+        : '${messages.length}:${messages.last.messageId}:${messages.last.sentAt.toIso8601String()}';
+    if (_lastScrollSignature == signature) return;
+
+    final animated = _lastScrollSignature != null;
+    _lastScrollSignature = signature;
+    _scrollToBottom(animated: animated);
   }
 
   @override
@@ -69,7 +116,9 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
       return const EmptyView(AppStrings.adminChatEmptyMessage);
     }
 
+    _syncScrollPosition(provider.messages);
     return ListView.builder(
+      controller: _scrollController,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       itemCount: provider.messages.length,
       itemBuilder: (context, index) {
