@@ -6,8 +6,17 @@ import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
 import 'package:loafncatting_mobile/widgets/state_views.dart';
 import 'package:provider/provider.dart';
 
+enum AdminDashboardMetric {
+  pendingOrders,
+  todayReservations,
+  lowStockProducts,
+  catsNotWorking,
+}
+
 class AdminDashboardScreen extends StatefulWidget {
-  const AdminDashboardScreen({super.key});
+  const AdminDashboardScreen({super.key, this.onMetricSelected});
+
+  final ValueChanged<AdminDashboardMetric>? onMetricSelected;
 
   @override
   State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
@@ -39,6 +48,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     if (provider.error != null) {
       return ErrorView(provider.error!, onRetry: provider.load);
     }
+    final onMetricSelected = widget.onMetricSelected;
     return RefreshIndicator(
       onRefresh: provider.load,
       child: ListView(
@@ -59,21 +69,41 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             childAspectRatio: 1.3,
             children: [
               _StatCard(
-                  icon: Icons.receipt_long,
-                  value: provider.pendingOrders,
-                  label: AppStrings.adminDashboardPendingOrders),
+                icon: Icons.receipt_long,
+                value: provider.pendingOrders,
+                label: AppStrings.adminDashboardPendingOrders,
+                onTap: onMetricSelected == null
+                    ? null
+                    : () =>
+                        onMetricSelected(AdminDashboardMetric.pendingOrders),
+              ),
               _StatCard(
-                  icon: Icons.event_available,
-                  value: provider.todayReservations,
-                  label: AppStrings.adminDashboardTodayReservations),
+                icon: Icons.event_available,
+                value: provider.todayReservations,
+                label: AppStrings.adminDashboardTodayReservations,
+                onTap: onMetricSelected == null
+                    ? null
+                    : () => onMetricSelected(
+                        AdminDashboardMetric.todayReservations),
+              ),
               _StatCard(
-                  icon: Icons.inventory_2_outlined,
-                  value: provider.lowStockProducts,
-                  label: AppStrings.adminDashboardLowStock),
+                icon: Icons.inventory_2_outlined,
+                value: provider.lowStockProducts,
+                label: AppStrings.adminDashboardLowStock,
+                onTap: onMetricSelected == null
+                    ? null
+                    : () =>
+                        onMetricSelected(AdminDashboardMetric.lowStockProducts),
+              ),
               _StatCard(
-                  icon: Icons.pets,
-                  value: provider.catsNotWorking,
-                  label: AppStrings.adminDashboardCatsNotWorking),
+                icon: Icons.pets,
+                value: provider.catsNotWorking,
+                label: AppStrings.adminDashboardCatsNotWorking,
+                onTap: onMetricSelected == null
+                    ? null
+                    : () =>
+                        onMetricSelected(AdminDashboardMetric.catsNotWorking),
+              ),
             ],
           ),
         ],
@@ -83,27 +113,49 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 }
 
 class _StatCard extends StatelessWidget {
-  const _StatCard(
-      {required this.icon, required this.value, required this.label});
+  const _StatCard({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.onTap,
+  });
   final IconData icon;
   final int value;
   final String label;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return CafeCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          CafeIconBadge(icon: icon),
-          Text('$value',
-              style: theme.textTheme.headlineMedium
-                  ?.copyWith(color: loafOrange, fontWeight: FontWeight.w900)),
-          Text(label,
-              style: theme.textTheme.bodyMedium?.copyWith(color: loafMuted)),
-        ],
+    return Semantics(
+      button: onTap != null,
+      enabled: onTap != null,
+      label: label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: CafeCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  CafeIconBadge(icon: icon),
+                  const Spacer(),
+                  if (onTap != null)
+                    const Icon(Icons.chevron_right, color: loafMuted, size: 22),
+                ],
+              ),
+              Text('$value',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                      color: loafOrange, fontWeight: FontWeight.w900)),
+              Text(label,
+                  style:
+                      theme.textTheme.bodyMedium?.copyWith(color: loafMuted)),
+            ],
+          ),
+        ),
       ),
     );
   }

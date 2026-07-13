@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
+import 'package:loafncatting_mobile/features/admin/models/admin_models.dart';
+import 'package:loafncatting_mobile/features/admin/providers/admin_providers.dart';
 import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/features/admin/screens/admin_catalog_screen.dart';
 import 'package:loafncatting_mobile/features/admin/screens/admin_chat_inbox_screen.dart';
@@ -27,15 +29,20 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   int index = 0;
   StreamSubscription<AppNotification>? _notificationPopupSubscription;
 
-  static const _screens = [
-    AdminDashboardScreen(),
-    AdminOrdersScreen(),
-    AdminReservationsScreen(),
-    AdminCatalogScreen(),
-    AdminCatsScreen(),
-    AdminChatInboxScreen(),
-    AdminMoreScreen(),
-  ];
+  static const _ordersIndex = 1;
+  static const _reservationsIndex = 2;
+  static const _catalogIndex = 3;
+  static const _catsIndex = 4;
+
+  List<Widget> get _screens => [
+        AdminDashboardScreen(onMetricSelected: _openDashboardMetric),
+        const AdminOrdersScreen(),
+        const AdminReservationsScreen(),
+        const AdminCatalogScreen(),
+        const AdminCatsScreen(),
+        const AdminChatInboxScreen(),
+        const AdminMoreScreen(),
+      ];
 
   @override
   void initState() {
@@ -73,6 +80,56 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
     );
   }
 
+  Future<void> _openDashboardMetric(AdminDashboardMetric metric) async {
+    switch (metric) {
+      case AdminDashboardMetric.pendingOrders:
+        final statusId = await _lookupOrderStatusId(kPendingOrderStatusName);
+        if (!mounted) return;
+        unawaited(context
+            .read<StaffOrderProvider>()
+            .applyFilters(statusId: statusId, date: null));
+        setState(() => index = _ordersIndex);
+        break;
+      case AdminDashboardMetric.todayReservations:
+        unawaited(context
+            .read<StaffReservationProvider>()
+            .applyFilters(statusId: null, date: _todayApiDate()));
+        setState(() => index = _reservationsIndex);
+        break;
+      case AdminDashboardMetric.lowStockProducts:
+        context.read<AdminCatalogProvider>().showLowStockProducts();
+        setState(() => index = _catalogIndex);
+        break;
+      case AdminDashboardMetric.catsNotWorking:
+        context.read<AdminCatProvider>().showNotWorkingCats();
+        setState(() => index = _catsIndex);
+        break;
+    }
+  }
+
+  Future<int?> _lookupOrderStatusId(String statusName) async {
+    final provider = context.read<AdminLookupsProvider>();
+    await provider.load();
+    return _lookupIdByName(
+      provider.lookups?.orderStatuses ?? const <LookupItem>[],
+      statusName,
+    );
+  }
+
+  int? _lookupIdByName(List<LookupItem> options, String name) {
+    for (final option in options) {
+      if (option.name == name) return option.id;
+    }
+    return null;
+  }
+
+  String _todayApiDate() {
+    final today = DateTime.now();
+    return '${today.year.toString().padLeft(4, '0')}-'
+        '${today.month.toString().padLeft(2, '0')}-'
+        '${today.day.toString().padLeft(2, '0')}';
+  }
+
   @override
   void dispose() {
     _notificationPopupSubscription?.cancel();
@@ -81,8 +138,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screens = _screens;
     return Scaffold(
-      body: _screens[index],
+      body: screens[index],
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
         height: 76,

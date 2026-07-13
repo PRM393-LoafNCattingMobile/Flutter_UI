@@ -34,7 +34,8 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
     final options = _nextOrderStatusOptions(order, lookups.orderStatuses);
     if (options.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đơn này chưa có thao tác trạng thái phù hợp.')),
+        const SnackBar(
+            content: Text('Đơn này chưa có thao tác trạng thái phù hợp.')),
       );
       return;
     }
@@ -103,8 +104,10 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
             AdminStatusFilterBar(
               options: lookups?.orderStatuses ?? const [],
               selectedId: provider.statusFilter,
-              onChanged: (statusId) =>
-                  provider.applyFilters(statusId: statusId),
+              selectedDate: provider.dateFilter,
+              onChanged: provider.applyStatusFilter,
+              onDateChanged: provider.applyDateFilter,
+              onReset: provider.clearFilters,
             ),
             Expanded(
               child: _buildBody(provider),
@@ -123,7 +126,9 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
       return ErrorView(provider.error!, onRetry: provider.load);
     }
     if (provider.orders.isEmpty) {
-      return const EmptyView(AppStrings.adminOrdersEmptyMessage);
+      return EmptyView(provider.hasFilters
+          ? 'Kh\u00f4ng t\u00ecm th\u1ea5y \u0111\u01a1n h\u00e0ng ph\u00f9 h\u1ee3p.'
+          : AppStrings.adminOrdersEmptyMessage);
     }
     return RefreshIndicator(
       onRefresh: provider.load,

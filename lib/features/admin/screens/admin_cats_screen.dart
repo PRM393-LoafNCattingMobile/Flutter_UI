@@ -29,6 +29,8 @@ class AdminCatsScreen extends StatefulWidget {
 }
 
 class _AdminCatsScreenState extends State<AdminCatsScreen> {
+  final searchController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -37,6 +39,12 @@ class _AdminCatsScreenState extends State<AdminCatsScreen> {
       context.read<AdminLookupsProvider>().load();
       context.read<AdminCatProvider>().load();
     });
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
   }
 
   bool get _canManage =>
@@ -97,6 +105,7 @@ class _AdminCatsScreenState extends State<AdminCatsScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AdminCatProvider>();
+    final lookups = context.watch<AdminLookupsProvider>().lookups;
     final canManage = _canManage;
     return Scaffold(
       appBar: AppBar(title: const Text(AppStrings.adminCatsTitle)),
@@ -106,7 +115,29 @@ class _AdminCatsScreenState extends State<AdminCatsScreen> {
               child: const Icon(Icons.add),
             )
           : null,
-      body: CafeSurface(child: _buildBody(provider, canManage)),
+      body: CafeSurface(
+        child: Column(
+          children: [
+            _AdminCatFilterHeader(
+              provider: provider,
+              lookups: lookups,
+              searchController: searchController,
+              onOpenFilters: lookups == null
+                  ? null
+                  : () => _showCatFilters(context, provider, lookups),
+              onResetFilters: () {
+                searchController.clear();
+                provider.resetCatFilters();
+              },
+              onClearSearch: () {
+                searchController.clear();
+                provider.clearSearchFilter();
+              },
+            ),
+            Expanded(child: _buildBody(provider, canManage)),
+          ],
+        ),
+      ),
     );
   }
 
@@ -118,12 +149,14 @@ class _AdminCatsScreenState extends State<AdminCatsScreen> {
       return ErrorView(provider.error!, onRetry: provider.load);
     }
     if (provider.cats.isEmpty) {
-      return const EmptyView(AppStrings.adminCatsEmptyMessage);
+      return EmptyView(provider.hasCatFilters
+          ? 'Kh\u00f4ng t\u00ecm th\u1ea5y b\u00e9 m\u00e8o n\u00e0o.'
+          : AppStrings.adminCatsEmptyMessage);
     }
     return RefreshIndicator(
       onRefresh: provider.load,
       child: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
         itemCount: provider.cats.length,
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (_, index) {
@@ -203,6 +236,356 @@ class _AdminCatsScreenState extends State<AdminCatsScreen> {
           );
         },
       ),
+    );
+  }
+}
+
+class _AdminCatFilterHeader extends StatelessWidget {
+  const _AdminCatFilterHeader({
+    required this.provider,
+    required this.lookups,
+    required this.searchController,
+    required this.onOpenFilters,
+    required this.onResetFilters,
+    required this.onClearSearch,
+  });
+
+  final AdminCatProvider provider;
+  final AdminLookups? lookups;
+  final TextEditingController searchController;
+  final VoidCallback? onOpenFilters;
+  final VoidCallback onResetFilters;
+  final VoidCallback onClearSearch;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: searchController,
+                  textInputAction: TextInputAction.search,
+                  decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.search),
+                    hintText: 'T\u00ecm m\u00e8o',
+                  ),
+                  onSubmitted: (value) => provider.applySearch(value.trim()),
+                ),
+              ),
+              const SizedBox(width: 10),
+              SizedBox(
+                width: 52,
+                height: 52,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: loafBorder),
+                      ),
+                      child: Center(
+                        child: IconButton(
+                          onPressed: onOpenFilters,
+                          icon: const Icon(Icons.tune),
+                        ),
+                      ),
+                    ),
+                    if (provider.hasCatFilters)
+                      Positioned(
+                        right: 10,
+                        top: 10,
+                        child: Container(
+                          width: 9,
+                          height: 9,
+                          decoration: const BoxDecoration(
+                            color: loafOrange,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (provider.hasCatFilters)
+          _AdminCatActiveFilters(
+            provider: provider,
+            onResetFilters: onResetFilters,
+            onClearSearch: onClearSearch,
+          ),
+      ],
+    );
+  }
+}
+
+class _AdminCatActiveFilters extends StatelessWidget {
+  const _AdminCatActiveFilters({
+    required this.provider,
+    required this.onResetFilters,
+    required this.onClearSearch,
+  });
+
+  final AdminCatProvider provider;
+  final VoidCallback onResetFilters;
+  final VoidCallback onClearSearch;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 42,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        children: [
+          if (provider.search.trim().isNotEmpty)
+            _ActiveFilterChip(
+              label: 'T\u00ecm: ${provider.search.trim()}',
+              onDeleted: onClearSearch,
+            ),
+          if (provider.statusFilterName != null)
+            _ActiveFilterChip(
+              label: provider.statusFilterName!,
+              onDeleted: () => provider.applyStatusFilter(null),
+            ),
+          if (provider.genderFilterName != null)
+            _ActiveFilterChip(
+              label: provider.genderFilterName!,
+              onDeleted: () => provider.applyGenderFilter(null),
+            ),
+          if (provider.notWorkingOnly)
+            _ActiveFilterChip(
+              label: 'M\u00e8o ngh\u1ec9/\u1ed1m',
+              onDeleted: provider.clearNotWorkingFilter,
+            ),
+          TextButton(
+            onPressed: onResetFilters,
+            child: const Text('Reset'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActiveFilterChip extends StatelessWidget {
+  const _ActiveFilterChip({required this.label, required this.onDeleted});
+
+  final String label;
+  final VoidCallback onDeleted;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: InputChip(
+        label: Text(label),
+        onDeleted: onDeleted,
+        deleteIcon: const Icon(Icons.close, size: 16),
+      ),
+    );
+  }
+}
+
+Future<void> _showCatFilters(
+  BuildContext context,
+  AdminCatProvider provider,
+  AdminLookups lookups,
+) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (_) => _CatFilterSheet(provider: provider, lookups: lookups),
+  );
+}
+
+class _CatFilterSheet extends StatefulWidget {
+  const _CatFilterSheet({
+    required this.provider,
+    required this.lookups,
+  });
+
+  final AdminCatProvider provider;
+  final AdminLookups lookups;
+
+  @override
+  State<_CatFilterSheet> createState() => _CatFilterSheetState();
+}
+
+class _CatFilterSheetState extends State<_CatFilterSheet> {
+  String? statusName;
+  String? genderName;
+  bool notWorkingOnly = false;
+
+  @override
+  void initState() {
+    super.initState();
+    statusName = widget.provider.statusFilterName;
+    genderName = widget.provider.genderFilterName;
+    notWorkingOnly = widget.provider.notWorkingOnly;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          12,
+          20,
+          MediaQuery.of(context).viewInsets.bottom + 20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 44,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: loafBorder,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Text('B\u1ed9 l\u1ecdc',
+                    style: Theme.of(context).textTheme.titleLarge),
+                const Spacer(),
+                TextButton(
+                  onPressed: _resetDraft,
+                  child: const Text('Reset'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            _FilterSection(
+              title: AppStrings.adminFilterByStatusLabel,
+              children: [
+                _FilterChoice(
+                  label: AppStrings.adminFilterAllStatuses,
+                  selected: statusName == null,
+                  onSelected: () => setState(() => statusName = null),
+                ),
+                ...widget.lookups.catStatuses.map(
+                  (status) => _FilterChoice(
+                    label: status.name,
+                    selected: statusName == status.name,
+                    onSelected: () => setState(() => statusName = status.name),
+                  ),
+                ),
+              ],
+            ),
+            _FilterSection(
+              title: AppStrings.catGenderLabel,
+              children: [
+                _FilterChoice(
+                  label: AppStrings.allCategoryLabel,
+                  selected: genderName == null,
+                  onSelected: () => setState(() => genderName = null),
+                ),
+                ...widget.lookups.genders.map(
+                  (gender) => _FilterChoice(
+                    label: gender.name,
+                    selected: genderName == gender.name,
+                    onSelected: () => setState(() => genderName = gender.name),
+                  ),
+                ),
+              ],
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              activeThumbColor: loafOrange,
+              title: const Text('M\u00e8o ngh\u1ec9/\u1ed1m'),
+              value: notWorkingOnly,
+              onChanged: (value) => setState(() => notWorkingOnly = value),
+            ),
+            const SizedBox(height: 14),
+            FilledButton.icon(
+              onPressed: () {
+                widget.provider.applyStatusFilter(statusName);
+                widget.provider.applyGenderFilter(genderName);
+                widget.provider.applyNotWorkingFilter(notWorkingOnly);
+                Navigator.pop(context);
+              },
+              icon: const Icon(Icons.check),
+              label: const Text('\u00c1p d\u1ee5ng'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _resetDraft() {
+    setState(() {
+      statusName = null;
+      genderName = null;
+      notWorkingOnly = false;
+    });
+  }
+}
+
+class _FilterSection extends StatelessWidget {
+  const _FilterSection({
+    required this.title,
+    required this.children,
+  });
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: children,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilterChoice extends StatelessWidget {
+  const _FilterChoice({
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onSelected(),
     );
   }
 }
