@@ -162,7 +162,6 @@ class _ReservationScreenState extends State<ReservationScreen> {
                   icon: Icons.event_available,
                 ),
                 _ReservationDetailsCard(
-                  provider: provider,
                   dateController: dateController,
                   guestController: guestController,
                   timeSlots: availableTimeSlots,
@@ -173,14 +172,6 @@ class _ReservationScreenState extends State<ReservationScreen> {
                   onTimeChanged: (value) {
                     if (value == null) return;
                     setState(() => timeController.text = value);
-                  },
-                  onLoadTables: () async {
-                    if (!_ensureFutureReservationDateTime()) return;
-                    await provider.loadAvailable(
-                      dateController.text,
-                      timeController.text,
-                      int.tryParse(guestController.text) ?? 1,
-                    );
                   },
                 ),
                 const SizedBox(height: 14),
@@ -236,7 +227,8 @@ class _ReservationScreenState extends State<ReservationScreen> {
   }
 }
 
-DateTime _dateOnly(DateTime value) => DateTime(value.year, value.month, value.day);
+DateTime _dateOnly(DateTime value) =>
+    DateTime(value.year, value.month, value.day);
 
 String _formatDate(DateTime date) {
   final month = date.month.toString().padLeft(2, '0');
@@ -281,24 +273,20 @@ String _preferredTimeSlot(List<String> slots) {
 
 class _ReservationDetailsCard extends StatelessWidget {
   const _ReservationDetailsCard({
-    required this.provider,
     required this.dateController,
     required this.guestController,
     required this.timeSlots,
     required this.selectedTime,
     required this.onDateTap,
     required this.onTimeChanged,
-    required this.onLoadTables,
   });
 
-  final ReservationProvider provider;
   final TextEditingController dateController;
   final TextEditingController guestController;
   final List<String> timeSlots;
   final String? selectedTime;
   final VoidCallback onDateTap;
   final ValueChanged<String?> onTimeChanged;
-  final VoidCallback onLoadTables;
 
   @override
   Widget build(BuildContext context) {
@@ -323,6 +311,7 @@ class _ReservationDetailsCard extends StatelessWidget {
               Expanded(
                 child: DropdownButtonFormField<String>(
                   initialValue: selectedTime,
+                  isExpanded: true,
                   items: timeSlots
                       .map(
                         (slot) => DropdownMenuItem(
@@ -350,33 +339,6 @@ class _ReservationDetailsCard extends StatelessWidget {
             ),
             keyboardType: TextInputType.number,
           ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: onLoadTables,
-            icon: const Icon(Icons.table_restaurant_outlined),
-            label: const Text(AppStrings.loadAvailableTablesButton),
-          ),
-          if (provider.availableTables.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: provider.availableTables
-                    .take(4)
-                    .map(
-                      (table) => CafeInfoChip(
-                        label: AppStrings.reservationTableOption(
-                          table.tableName,
-                          table.capacity,
-                        ),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
-          ],
         ],
       ),
     );

@@ -75,33 +75,38 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: screens[index],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: index,
-        height: 76,
-        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
-        onDestinationSelected: (value) => setState(() => index = value),
-        destinations: const [
-          NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
-              label: AppStrings.homeNavLabel),
-          NavigationDestination(
-              icon: Icon(Icons.local_cafe_outlined),
-              selectedIcon: Icon(Icons.local_cafe),
-              label: AppStrings.menuNavLabel),
-          NavigationDestination(
-              icon: Icon(Icons.calendar_month_outlined),
-              selectedIcon: Icon(Icons.calendar_month),
-              label: AppStrings.reservationsNavLabel),
-          NavigationDestination(
-              icon: Icon(Icons.pets_outlined),
-              selectedIcon: Icon(Icons.pets),
-              label: AppStrings.catsNavLabel),
-          NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person),
-              label: AppStrings.profileNavLabel),
-        ],
+      bottomNavigationBar: MediaQuery.withClampedTextScaling(
+        // Khóa nhãn navbar ở scale 1.0 để không bị xuống dòng/lệch khi máy thật
+        // để cỡ chữ hệ thống lớn hơn emulator.
+        maxScaleFactor: 1.0,
+        child: NavigationBar(
+          selectedIndex: index,
+          height: 76,
+          labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+          onDestinationSelected: (value) => setState(() => index = value),
+          destinations: const [
+            NavigationDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home),
+                label: AppStrings.homeNavLabel),
+            NavigationDestination(
+                icon: Icon(Icons.local_cafe_outlined),
+                selectedIcon: Icon(Icons.local_cafe),
+                label: AppStrings.menuNavLabel),
+            NavigationDestination(
+                icon: Icon(Icons.calendar_month_outlined),
+                selectedIcon: Icon(Icons.calendar_month),
+                label: AppStrings.reservationsNavLabel),
+            NavigationDestination(
+                icon: Icon(Icons.pets_outlined),
+                selectedIcon: Icon(Icons.pets),
+                label: AppStrings.catsNavLabel),
+            NavigationDestination(
+                icon: Icon(Icons.person_outline),
+                selectedIcon: Icon(Icons.person),
+                label: AppStrings.profileNavLabel),
+          ],
+        ),
       ),
     );
   }
