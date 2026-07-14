@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/constants/app_routes.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
-import 'package:loafncatting_mobile/screens/reservation_history_screen.dart';
+import 'package:loafncatting_mobile/features/reservations/screens/reservation_history_screen.dart';
 import 'package:loafncatting_mobile/widgets/cafe_form_fields.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
 import 'package:loafncatting_mobile/widgets/state_views.dart';
@@ -94,7 +94,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
     if (timeController.text.isEmpty || !slots.contains(timeController.text)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Vui lòng chọn khung giờ đặt bàn trong tương lai.'),
+          content: Text(AppStrings.futureReservationTimeRequiredMessage),
         ),
       );
       setState(() => timeController.text = _preferredTimeSlot(slots));
@@ -334,7 +334,7 @@ class _ReservationDetailsCard extends StatelessWidget {
                     labelText: AppStrings.timeLabel,
                     prefixIcon: Icon(Icons.schedule),
                   ),
-                  hint: const Text('Hết khung giờ'),
+                  hint: const Text(AppStrings.timeSlotFullLabel),
                 ),
               ),
             ],

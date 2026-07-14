@@ -3,6 +3,7 @@ import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/features/admin/admin_routing.dart';
 import 'package:loafncatting_mobile/features/admin/models/admin_models.dart';
 import 'package:loafncatting_mobile/features/admin/providers/admin_providers.dart';
+import 'package:loafncatting_mobile/features/admin/widgets/admin_widgets.dart';
 import 'package:loafncatting_mobile/features/admin/widgets/status_picker.dart';
 import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
@@ -63,23 +64,7 @@ class _AdminTablesScreenState extends State<AdminTablesScreen> {
 
   Future<void> _delete(CafeTable table) async {
     final provider = context.read<AdminTableProvider>();
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text(AppStrings.adminDeleteConfirmTitle),
-        content: const Text(AppStrings.adminDeleteConfirmMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text(AppStrings.adminCancelButton),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text(AppStrings.adminDeleteButton),
-          ),
-        ],
-      ),
-    );
+    final confirmed = await showAdminDeleteConfirmDialog(context);
     if (confirmed != true) return;
     final ok = await provider.deleteTable(table.tableId);
     if (!mounted) return;
@@ -157,64 +142,66 @@ class _AdminTablesScreenState extends State<AdminTablesScreen> {
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: CafeCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const CafeIconBadge(icon: Icons.table_restaurant_outlined),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(table.tableName,
-                              style: Theme.of(context).textTheme.titleMedium),
-                          Text(
-                            AppStrings.reservationTableOption(
-                                table.area ?? '-', table.capacity),
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(color: loafMuted),
+                    Row(
+                      children: [
+                        const CafeIconBadge(
+                            icon: Icons.table_restaurant_outlined),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(table.tableName,
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium),
+                              Text(
+                                AppStrings.reservationTableOption(
+                                    table.area ?? '-', table.capacity),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(color: loafMuted),
+                              ),
+                            ],
                           ),
+                        ),
+                        CafeInfoChip(label: table.statusName),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        alignment: WrapAlignment.end,
+                        children: [
+                          if (canUpdateStatus)
+                            OutlinedButton.icon(
+                              onPressed: () => _updateStatus(table),
+                              icon: const Icon(Icons.sync),
+                              label: const Text(
+                                  AppStrings.adminUpdateStatusButton),
+                            ),
+                          if (canEditTables) ...[
+                            IconButton(
+                              onPressed: () => _openForm(table),
+                              tooltip: AppStrings.adminEditTableAction,
+                              icon: const Icon(Icons.edit_outlined),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline),
+                              onPressed: () => _delete(table),
+                            ),
+                          ],
                         ],
                       ),
                     ),
-                    CafeInfoChip(label: table.statusName),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    alignment: WrapAlignment.end,
-                    children: [
-                      if (canUpdateStatus)
-                        OutlinedButton.icon(
-                          onPressed: () => _updateStatus(table),
-                          icon: const Icon(Icons.sync),
-                          label:
-                              const Text(AppStrings.adminUpdateStatusButton),
-                        ),
-                      if (canEditTables) ...[
-                        TextButton.icon(
-                          onPressed: () => _openForm(table),
-                          icon: const Icon(Icons.edit_outlined),
-                          label: const Text(AppStrings.adminSaveButton),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline),
-                          onPressed: () => _delete(table),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
               ),
             );
           }),
@@ -240,9 +227,13 @@ class _TableMapSection extends StatelessWidget {
     final theme = Theme.of(context);
     final grouped = <String, List<CafeTable>>{};
     for (final table in tables) {
-      grouped.putIfAbsent(table.area?.trim().isNotEmpty == true
-          ? table.area!.trim()
-          : 'Khu chung', () => []).add(table);
+      grouped
+          .putIfAbsent(
+              table.area?.trim().isNotEmpty == true
+                  ? table.area!.trim()
+                  : 'Khu chung',
+              () => [])
+          .add(table);
     }
 
     return CafeCard(
@@ -254,7 +245,7 @@ class _TableMapSection extends StatelessWidget {
               const CafeIconBadge(icon: Icons.grid_view_outlined),
               const SizedBox(width: 12),
               Expanded(
-                child: Text('Sơ đồ bàn',
+                child: Text(AppStrings.adminTableMapTitle,
                     style: theme.textTheme.titleMedium),
               ),
             ],

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/services/api_service.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -81,7 +82,7 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Thanh toán PayOS'),
+          title: const Text(AppStrings.payOsTitle),
           leading: IconButton(
             icon: const Icon(Icons.close),
             onPressed: () => unawaited(_closeAfterStatusCheck()),
@@ -97,3 +98,4 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
     );
   }
 }
+

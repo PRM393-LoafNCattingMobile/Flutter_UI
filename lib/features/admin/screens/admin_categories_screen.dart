@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/features/admin/providers/admin_providers.dart';
+import 'package:loafncatting_mobile/features/admin/widgets/admin_widgets.dart';
 import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/widgets/cafe_form_fields.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
@@ -18,8 +19,7 @@ class AdminCategoriesScreen extends StatelessWidget {
       builder: (_) => _CategoryFormDialog(category: category),
     );
     if (result == null) return;
-    final ok =
-        await provider.saveCategory(result, id: category?.categoryId);
+    final ok = await provider.saveCategory(result, id: category?.categoryId);
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(ok
@@ -77,6 +77,7 @@ class AdminCategoriesScreen extends StatelessWidget {
                           ),
                         ),
                         IconButton(
+                          tooltip: AppStrings.adminEditCategoryAction,
                           icon: const Icon(Icons.edit_outlined),
                           onPressed: () =>
                               _openForm(context, category: category),
@@ -95,23 +96,8 @@ class AdminCategoriesScreen extends StatelessWidget {
   }
 }
 
-Future<bool?> _confirmDelete(BuildContext context) => showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text(AppStrings.adminDeleteConfirmTitle),
-        content: const Text(AppStrings.adminDeleteConfirmMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text(AppStrings.adminCancelButton),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text(AppStrings.adminDeleteButton),
-          ),
-        ],
-      ),
-    );
+Future<bool?> _confirmDelete(BuildContext context) =>
+    showAdminDeleteConfirmDialog(context);
 
 class _CategoryFormDialog extends StatefulWidget {
   const _CategoryFormDialog({this.category});
