@@ -72,7 +72,7 @@ class AdminStatusFilterBar extends StatelessWidget {
                 if (hasFilter && onReset != null)
                   TextButton(
                     onPressed: onReset,
-                    child: const Text('Reset'),
+                    child: const Text(AppStrings.resetButton),
                   ),
               ],
             ),

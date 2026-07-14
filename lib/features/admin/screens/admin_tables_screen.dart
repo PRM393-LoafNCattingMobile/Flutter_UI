@@ -254,7 +254,7 @@ class _TableMapSection extends StatelessWidget {
               const CafeIconBadge(icon: Icons.grid_view_outlined),
               const SizedBox(width: 12),
               Expanded(
-                child: Text('Sơ đồ bàn',
+                child: Text(AppStrings.adminTableMapTitle,
                     style: theme.textTheme.titleMedium),
               ),
             ],

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
-import 'package:loafncatting_mobile/screens/checkout_screen.dart';
+import 'package:loafncatting_mobile/features/checkout/screens/checkout_screen.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
 import 'package:loafncatting_mobile/widgets/state_views.dart';

@@ -35,7 +35,7 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
     if (options.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Đơn này chưa có thao tác trạng thái phù hợp.')),
+            content: Text(AppStrings.adminNoNextStatusMessage)),
       );
       return;
     }
@@ -63,7 +63,7 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
     if (!mounted) return;
     if (detail == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(provider.error ?? 'Không tải được chi tiết đơn.'),
+        content: Text(provider.error ?? AppStrings.adminOrderDetailFallbackError),
       ));
       return;
     }
@@ -212,7 +212,7 @@ class _OrderCard extends StatelessWidget {
                 OutlinedButton.icon(
                   onPressed: onOpenDetail,
                   icon: const Icon(Icons.restaurant_menu_outlined),
-                  label: const Text('Chi tiết nấu'),
+                  label: const Text(AppStrings.adminCookingDetailButton),
                 ),
                 OutlinedButton.icon(
                   onPressed: onUpdateStatus,
@@ -305,10 +305,10 @@ class _OrderDetailSheet extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 18),
-            Text('Món cần chuẩn bị', style: theme.textTheme.titleMedium),
+            Text(AppStrings.adminItemsToPrepareTitle, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             if (order.items.isEmpty)
-              Text('Đơn này chưa có dòng món.',
+              Text(AppStrings.adminOrderHasNoItemsMessage,
                   style: theme.textTheme.bodyMedium?.copyWith(color: loafMuted))
             else
               ...order.items.map(

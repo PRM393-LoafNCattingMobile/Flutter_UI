@@ -38,7 +38,7 @@ class AdminChatComposer extends StatelessWidget {
             FilledButton.icon(
               onPressed: onSend,
               icon: const Icon(Icons.send),
-              label: const Text('Gửi'),
+              label: const Text(AppStrings.adminSendButton),
             ),
           ],
         ),

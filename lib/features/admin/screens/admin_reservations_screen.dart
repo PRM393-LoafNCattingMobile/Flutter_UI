@@ -39,7 +39,7 @@ class _AdminReservationsScreenState extends State<AdminReservationsScreen> {
         _nextReservationStatusOptions(reservation, lookups.reservationStatuses);
     if (options.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lượt đặt bàn này đã ở trạng thái cuối.')),
+        const SnackBar(content: Text(AppStrings.adminReservationFinalStatusMessage)),
       );
       return;
     }

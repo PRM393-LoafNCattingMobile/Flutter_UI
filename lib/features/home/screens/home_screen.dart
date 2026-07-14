@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
-import 'package:loafncatting_mobile/screens/cat_gallery_screen.dart';
-import 'package:loafncatting_mobile/screens/menu_screen.dart';
-import 'package:loafncatting_mobile/screens/more_screen.dart';
-import 'package:loafncatting_mobile/screens/profile_screen.dart';
-import 'package:loafncatting_mobile/screens/reservation_screen.dart';
+import 'package:loafncatting_mobile/features/cats/screens/cat_gallery_screen.dart';
+import 'package:loafncatting_mobile/features/menu/screens/menu_screen.dart';
+import 'package:loafncatting_mobile/features/more/screens/more_screen.dart';
+import 'package:loafncatting_mobile/features/profile/screens/profile_screen.dart';
+import 'package:loafncatting_mobile/features/reservations/screens/reservation_screen.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {

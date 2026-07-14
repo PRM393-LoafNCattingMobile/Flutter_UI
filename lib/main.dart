@@ -5,10 +5,10 @@ import 'package:loafncatting_mobile/features/admin/providers/admin_chat_provider
 import 'package:loafncatting_mobile/features/admin/providers/admin_providers.dart';
 import 'package:loafncatting_mobile/features/admin/screens/admin_shell_screen.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
-import 'package:loafncatting_mobile/screens/home_screen.dart';
-import 'package:loafncatting_mobile/screens/login_screen.dart';
-import 'package:loafncatting_mobile/screens/register_screen.dart';
-import 'package:loafncatting_mobile/screens/splash_screen.dart';
+import 'package:loafncatting_mobile/features/home/screens/home_screen.dart';
+import 'package:loafncatting_mobile/features/auth/screens/login_screen.dart';
+import 'package:loafncatting_mobile/features/auth/screens/register_screen.dart';
+import 'package:loafncatting_mobile/features/auth/screens/splash_screen.dart';
 import 'package:loafncatting_mobile/services/api_service.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:provider/provider.dart';
