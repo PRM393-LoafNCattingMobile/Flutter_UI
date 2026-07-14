@@ -17,196 +17,93 @@ class _AdminCatalogFilterHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: searchController,
-                  textInputAction: TextInputAction.search,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.search),
-                    hintText: AppStrings.menuSearchHint,
-                  ),
-                  onSubmitted: (value) => provider.applySearch(value.trim()),
-                ),
+    return AdminSearchFilterHeader(
+      searchController: searchController,
+      searchHint: AppStrings.menuSearchHint,
+      hasFilters: provider.hasProductFilters,
+      onSearchSubmitted: provider.applySearch,
+      onOpenFilters: onOpenFilters,
+      onResetFilters: onResetFilters,
+      activeFilters: _productActiveFilterData(provider, onClearSearch),
+      choiceChips: provider.categories.isEmpty
+          ? const []
+          : [
+              ChoiceChip(
+                avatar: const Icon(Icons.apps_outlined, size: 17),
+                label: const Text(AppStrings.allCategoryLabel),
+                selected: provider.selectedCategoryId == null,
+                onSelected: (_) => provider.applyCategoryFilter(null),
               ),
-              const SizedBox(width: 10),
-              SizedBox(
-                width: 52,
-                height: 52,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: loafBorder),
-                      ),
-                      child: Center(
-                        child: IconButton(
-                          onPressed: onOpenFilters,
-                          icon: const Icon(Icons.tune),
-                        ),
-                      ),
-                    ),
-                    if (provider.hasProductFilters)
-                      Positioned(
-                        right: 10,
-                        top: 10,
-                        child: Container(
-                          width: 9,
-                          height: 9,
-                          decoration: const BoxDecoration(
-                            color: loafOrange,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                  ],
+              const SizedBox(width: 8),
+              ...provider.categories.map(
+                (category) => Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    avatar: const Icon(Icons.local_cafe_outlined, size: 17),
+                    label: Text(category.name),
+                    selected: provider.selectedCategoryId == category.categoryId,
+                    onSelected: (_) =>
+                        provider.applyCategoryFilter(category.categoryId),
+                  ),
                 ),
               ),
             ],
-          ),
-        ),
-        if (provider.categories.isNotEmpty)
-          SizedBox(
-            height: 48,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: [
-                ChoiceChip(
-                  avatar: const Icon(Icons.apps_outlined, size: 17),
-                  label: const Text(AppStrings.allCategoryLabel),
-                  selected: provider.selectedCategoryId == null,
-                  onSelected: (_) => provider.applyCategoryFilter(null),
-                ),
-                const SizedBox(width: 8),
-                ...provider.categories.map(
-                  (category) => Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      avatar: const Icon(Icons.local_cafe_outlined, size: 17),
-                      label: Text(category.name),
-                      selected:
-                          provider.selectedCategoryId == category.categoryId,
-                      onSelected: (_) =>
-                          provider.applyCategoryFilter(category.categoryId),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        if (provider.hasProductFilters)
-          _AdminProductActiveFilters(
-            provider: provider,
-            onResetFilters: onResetFilters,
-            onClearSearch: onClearSearch,
-          ),
-      ],
     );
   }
 }
 
-class _AdminProductActiveFilters extends StatelessWidget {
-  const _AdminProductActiveFilters({
-    required this.provider,
-    required this.onResetFilters,
-    required this.onClearSearch,
-  });
-
-  final AdminCatalogProvider provider;
-  final VoidCallback onResetFilters;
-  final VoidCallback onClearSearch;
-
-  @override
-  Widget build(BuildContext context) {
-    String? selectedCategory;
-    for (final category in provider.categories) {
-      if (category.categoryId == provider.selectedCategoryId) {
-        selectedCategory = category.name;
-        break;
-      }
+List<AdminActiveFilterChipData> _productActiveFilterData(
+  AdminCatalogProvider provider,
+  VoidCallback onClearSearch,
+) {
+  String? selectedCategory;
+  for (final category in provider.categories) {
+    if (category.categoryId == provider.selectedCategoryId) {
+      selectedCategory = category.name;
+      break;
     }
-
-    return SizedBox(
-      height: 42,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        children: [
-          if (provider.search.trim().isNotEmpty)
-            _ActiveFilterChip(
-              label: 'T\u00ecm: ${provider.search.trim()}',
-              onDeleted: onClearSearch,
-            ),
-          if (selectedCategory != null)
-            _ActiveFilterChip(
-              label: selectedCategory,
-              onDeleted: provider.clearCategoryFilter,
-            ),
-          if (provider.availabilityFilter ==
-              ProductAvailabilityFilter.availableOnly)
-            _ActiveFilterChip(
-              label: AppStrings.inStockLabel,
-              onDeleted: provider.clearAvailabilityFilter,
-            ),
-          if (provider.hasPriceFilter)
-            _ActiveFilterChip(
-              label: _priceRangeLabel(
-                provider.priceFilterMin,
-                provider.priceFilterMax,
-              ),
-              onDeleted: provider.clearPriceRangeFilter,
-            ),
-          if (provider.sortOption != ProductSortOption.defaultOrder)
-            _ActiveFilterChip(
-              label: _sortOptionLabel(provider.sortOption),
-              onDeleted: provider.clearSortFilter,
-            ),
-          if (provider.discountedOnly)
-            _ActiveFilterChip(
-              label: 'Gi\u1ea3m gi\u00e1',
-              onDeleted: provider.clearDiscountFilter,
-            ),
-          if (provider.lowStockOnly)
-            _ActiveFilterChip(
-              label: 'S\u1eafp h\u1ebft',
-              onDeleted: provider.clearLowStockFilter,
-            ),
-          TextButton(
-            onPressed: onResetFilters,
-            child: const Text(AppStrings.resetButton),
-          ),
-        ],
-      ),
-    );
   }
-}
 
-class _ActiveFilterChip extends StatelessWidget {
-  const _ActiveFilterChip({required this.label, required this.onDeleted});
-
-  final String label;
-  final VoidCallback onDeleted;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: InputChip(
-        label: Text(label),
-        onDeleted: onDeleted,
-        deleteIcon: const Icon(Icons.close, size: 16),
+  return [
+    if (provider.search.trim().isNotEmpty)
+      AdminActiveFilterChipData(
+        label: 'Tìm: ${provider.search.trim()}',
+        onDeleted: onClearSearch,
       ),
-    );
-  }
+    if (selectedCategory != null)
+      AdminActiveFilterChipData(
+        label: selectedCategory,
+        onDeleted: provider.clearCategoryFilter,
+      ),
+    if (provider.availabilityFilter == ProductAvailabilityFilter.availableOnly)
+      AdminActiveFilterChipData(
+        label: AppStrings.inStockLabel,
+        onDeleted: provider.clearAvailabilityFilter,
+      ),
+    if (provider.hasPriceFilter)
+      AdminActiveFilterChipData(
+        label: _priceRangeLabel(
+          provider.priceFilterMin,
+          provider.priceFilterMax,
+        ),
+        onDeleted: provider.clearPriceRangeFilter,
+      ),
+    if (provider.sortOption != ProductSortOption.defaultOrder)
+      AdminActiveFilterChipData(
+        label: _sortOptionLabel(provider.sortOption),
+        onDeleted: provider.clearSortFilter,
+      ),
+    if (provider.discountedOnly)
+      AdminActiveFilterChipData(
+        label: 'Giảm giá',
+        onDeleted: provider.clearDiscountFilter,
+      ),
+    if (provider.lowStockOnly)
+      AdminActiveFilterChipData(
+        label: 'Sắp hết',
+        onDeleted: provider.clearLowStockFilter,
+      ),
+  ];
 }
 
 Future<void> _showCatalogFilters(
@@ -290,16 +187,16 @@ class _CatalogFilterSheetState extends State<_CatalogFilterSheet> {
               ],
             ),
             const SizedBox(height: 14),
-            _FilterSection(
+            AdminFilterSection(
               title: AppStrings.availabilityFilterTitle,
               children: [
-                _FilterChoice(
+                AdminFilterChoice(
                   label: AppStrings.allCategoryLabel,
                   selected: availability == ProductAvailabilityFilter.all,
                   onSelected: () => setState(
                       () => availability = ProductAvailabilityFilter.all),
                 ),
-                _FilterChoice(
+                AdminFilterChoice(
                   label: AppStrings.inStockLabel,
                   selected:
                       availability == ProductAvailabilityFilter.availableOnly,
@@ -308,7 +205,7 @@ class _CatalogFilterSheetState extends State<_CatalogFilterSheet> {
                 ),
               ],
             ),
-            _FilterSection(
+            AdminFilterSection(
               title: AppStrings.priceFilterTitle,
               wrapChildren: false,
               children: [
@@ -320,11 +217,11 @@ class _CatalogFilterSheetState extends State<_CatalogFilterSheet> {
                 ),
               ],
             ),
-            _FilterSection(
+            AdminFilterSection(
               title: AppStrings.sortFilterTitle,
               children: ProductSortOption.values
                   .map(
-                    (option) => _FilterChoice(
+                    (option) => AdminFilterChoice(
                       label: _sortOptionLabel(option),
                       selected: sortOption == option,
                       onSelected: () => setState(() => sortOption = option),
@@ -379,63 +276,6 @@ class _CatalogFilterSheetState extends State<_CatalogFilterSheet> {
       discountedOnly = false;
       lowStockOnly = false;
     });
-  }
-}
-
-class _FilterSection extends StatelessWidget {
-  const _FilterSection({
-    required this.title,
-    required this.children,
-    this.wrapChildren = true,
-  });
-
-  final String title;
-  final List<Widget> children;
-  final bool wrapChildren;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          wrapChildren
-              ? Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: children,
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: children,
-                ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FilterChoice extends StatelessWidget {
-  const _FilterChoice({
-    required this.label,
-    required this.selected,
-    required this.onSelected,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onSelected(),
-    );
   }
 }
 

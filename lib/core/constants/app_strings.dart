@@ -220,6 +220,7 @@ class AppStrings {
   static const adminReservationsTitle = 'Quản lý đặt bàn';
   static const adminCatalogTitle = 'Quản lý thực đơn';
   static const adminCatsTitle = 'Quản lý mèo';
+  static const adminCatSearchHint = 'Tìm mèo';
   static const adminMoreTitle = 'Khác';
 
   static const adminComingSoonMessage = 'Tính năng đang được hoàn thiện.';

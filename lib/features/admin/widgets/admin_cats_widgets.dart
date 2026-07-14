@@ -19,139 +19,44 @@ class _AdminCatFilterHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: searchController,
-                  textInputAction: TextInputAction.search,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.search),
-                    hintText: 'T\u00ecm m\u00e8o',
-                  ),
-                  onSubmitted: (value) => provider.applySearch(value.trim()),
-                ),
-              ),
-              const SizedBox(width: 10),
-              SizedBox(
-                width: 52,
-                height: 52,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: loafBorder),
-                      ),
-                      child: Center(
-                        child: IconButton(
-                          onPressed: onOpenFilters,
-                          icon: const Icon(Icons.tune),
-                        ),
-                      ),
-                    ),
-                    if (provider.hasCatFilters)
-                      Positioned(
-                        right: 10,
-                        top: 10,
-                        child: Container(
-                          width: 9,
-                          height: 9,
-                          decoration: const BoxDecoration(
-                            color: loafOrange,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (provider.hasCatFilters)
-          _AdminCatActiveFilters(
-            provider: provider,
-            onResetFilters: onResetFilters,
-            onClearSearch: onClearSearch,
-          ),
-      ],
+    return AdminSearchFilterHeader(
+      searchController: searchController,
+      searchHint: AppStrings.adminCatSearchHint,
+      hasFilters: provider.hasCatFilters,
+      onSearchSubmitted: provider.applySearch,
+      onOpenFilters: onOpenFilters,
+      onResetFilters: onResetFilters,
+      activeFilters: _catActiveFilterData(provider, onClearSearch),
     );
   }
 }
 
-class _AdminCatActiveFilters extends StatelessWidget {
-  const _AdminCatActiveFilters({
-    required this.provider,
-    required this.onResetFilters,
-    required this.onClearSearch,
-  });
-
-  final AdminCatProvider provider;
-  final VoidCallback onResetFilters;
-  final VoidCallback onClearSearch;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 42,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        children: [
-          if (provider.search.trim().isNotEmpty)
-            _ActiveFilterChip(
-              label: 'T\u00ecm: ${provider.search.trim()}',
-              onDeleted: onClearSearch,
-            ),
-          if (provider.statusFilterName != null)
-            _ActiveFilterChip(
-              label: provider.statusFilterName!,
-              onDeleted: () => provider.applyStatusFilter(null),
-            ),
-          if (provider.genderFilterName != null)
-            _ActiveFilterChip(
-              label: provider.genderFilterName!,
-              onDeleted: () => provider.applyGenderFilter(null),
-            ),
-          if (provider.notWorkingOnly)
-            _ActiveFilterChip(
-              label: 'M\u00e8o ngh\u1ec9/\u1ed1m',
-              onDeleted: provider.clearNotWorkingFilter,
-            ),
-          TextButton(
-            onPressed: onResetFilters,
-            child: const Text(AppStrings.resetButton),
-          ),
-        ],
+List<AdminActiveFilterChipData> _catActiveFilterData(
+  AdminCatProvider provider,
+  VoidCallback onClearSearch,
+) {
+  return [
+    if (provider.search.trim().isNotEmpty)
+      AdminActiveFilterChipData(
+        label: 'Tìm: ${provider.search.trim()}',
+        onDeleted: onClearSearch,
       ),
-    );
-  }
-}
-
-class _ActiveFilterChip extends StatelessWidget {
-  const _ActiveFilterChip({required this.label, required this.onDeleted});
-
-  final String label;
-  final VoidCallback onDeleted;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: InputChip(
-        label: Text(label),
-        onDeleted: onDeleted,
-        deleteIcon: const Icon(Icons.close, size: 16),
+    if (provider.statusFilterName != null)
+      AdminActiveFilterChipData(
+        label: provider.statusFilterName!,
+        onDeleted: () => provider.applyStatusFilter(null),
       ),
-    );
-  }
+    if (provider.genderFilterName != null)
+      AdminActiveFilterChipData(
+        label: provider.genderFilterName!,
+        onDeleted: () => provider.applyGenderFilter(null),
+      ),
+    if (provider.notWorkingOnly)
+      AdminActiveFilterChipData(
+        label: AppStrings.adminCatsNotWorkingOnlyLabel,
+        onDeleted: provider.clearNotWorkingFilter,
+      ),
+  ];
 }
 
 Future<void> _showCatFilters(
@@ -233,16 +138,16 @@ class _CatFilterSheetState extends State<_CatFilterSheet> {
               ],
             ),
             const SizedBox(height: 14),
-            _FilterSection(
+            AdminFilterSection(
               title: AppStrings.adminFilterByStatusLabel,
               children: [
-                _FilterChoice(
+                AdminFilterChoice(
                   label: AppStrings.adminFilterAllStatuses,
                   selected: statusName == null,
                   onSelected: () => setState(() => statusName = null),
                 ),
                 ...widget.lookups.catStatuses.map(
-                  (status) => _FilterChoice(
+                  (status) => AdminFilterChoice(
                     label: status.name,
                     selected: statusName == status.name,
                     onSelected: () => setState(() => statusName = status.name),
@@ -250,16 +155,16 @@ class _CatFilterSheetState extends State<_CatFilterSheet> {
                 ),
               ],
             ),
-            _FilterSection(
+            AdminFilterSection(
               title: AppStrings.catGenderLabel,
               children: [
-                _FilterChoice(
+                AdminFilterChoice(
                   label: AppStrings.allCategoryLabel,
                   selected: genderName == null,
                   onSelected: () => setState(() => genderName = null),
                 ),
                 ...widget.lookups.genders.map(
-                  (gender) => _FilterChoice(
+                  (gender) => AdminFilterChoice(
                     label: gender.name,
                     selected: genderName == gender.name,
                     onSelected: () => setState(() => genderName = gender.name),
@@ -297,56 +202,6 @@ class _CatFilterSheetState extends State<_CatFilterSheet> {
       genderName = null;
       notWorkingOnly = false;
     });
-  }
-}
-
-class _FilterSection extends StatelessWidget {
-  const _FilterSection({
-    required this.title,
-    required this.children,
-  });
-
-  final String title;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: children,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FilterChoice extends StatelessWidget {
-  const _FilterChoice({
-    required this.label,
-    required this.selected,
-    required this.onSelected,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onSelected(),
-    );
   }
 }
 
