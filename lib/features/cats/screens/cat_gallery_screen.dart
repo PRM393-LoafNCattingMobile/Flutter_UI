@@ -3,6 +3,7 @@ import 'package:loafncatting_mobile/core/constants/app_strings.dart';
 import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/providers/app_state.dart';
 import 'package:loafncatting_mobile/features/cats/screens/cat_detail_screen.dart';
+import 'package:loafncatting_mobile/features/cats/utils/cat_status_ui.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
 import 'package:loafncatting_mobile/widgets/state_views.dart';
@@ -65,7 +66,7 @@ class _CatGalleryScreenState extends State<CatGalleryScreen> {
                     onSelected: () => setState(() => selectedFilter = 'Tất cả'),
                   ),
                   _CatFilterChip(
-                    label: 'Đang làm việc',
+                    label: 'Đang ở quán',
                     icon: Icons.circle,
                     selected: selectedFilter == 'Đang làm việc',
                     color: loafSuccess,
@@ -73,7 +74,7 @@ class _CatGalleryScreenState extends State<CatGalleryScreen> {
                         setState(() => selectedFilter = 'Đang làm việc'),
                   ),
                   _CatFilterChip(
-                    label: 'Bị bệnh',
+                    label: 'Đang được chăm sóc',
                     icon: Icons.nightlight_round,
                     selected: selectedFilter == 'Bị bệnh',
                     color: const Color(0xFF4D6FB8),
@@ -81,7 +82,7 @@ class _CatGalleryScreenState extends State<CatGalleryScreen> {
                         setState(() => selectedFilter = 'Bị bệnh'),
                   ),
                   _CatFilterChip(
-                    label: 'Xin nghỉ',
+                    label: 'Đang nghỉ',
                     icon: Icons.favorite,
                     selected: selectedFilter == 'Xin nghỉ',
                     color: Theme.of(context).colorScheme.error,
@@ -205,7 +206,7 @@ class CatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _statusColor(context, cat.statusName);
+    final color = catStatusColor(context, cat.statusName);
     return InkWell(
       borderRadius: BorderRadius.circular(18),
       onTap: () => Navigator.push(context,
@@ -263,7 +264,10 @@ class CatCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 8),
-                  CafeInfoChip(label: cat.statusName, color: color),
+                  CafeInfoChip(
+                    label: catStatusDisplayName(cat.statusName),
+                    color: color,
+                  ),
                 ],
               ),
             ),
@@ -271,14 +275,5 @@ class CatCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Color _statusColor(BuildContext context, String status) {
-    final lower = status.toLowerCase();
-    if (lower.contains('đang làm việc')) return loafSuccess;
-    if (lower.contains('bị bệnh')) {
-      return const Color(0xFF4D6FB8);
-    }
-    return Theme.of(context).colorScheme.error;
   }
 }

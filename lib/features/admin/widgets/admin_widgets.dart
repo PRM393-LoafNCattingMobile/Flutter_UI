@@ -247,6 +247,43 @@ class AdminFilterChoice extends StatelessWidget {
   }
 }
 
+class AdminDeleteConfirmDialog extends StatelessWidget {
+  const AdminDeleteConfirmDialog({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text(AppStrings.adminDeleteConfirmTitle),
+      content: const Text(AppStrings.adminDeleteConfirmMessage),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 22),
+      actions: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text(AppStrings.adminCancelButton),
+            ),
+            const SizedBox(height: 8),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text(AppStrings.adminDeleteButton),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+Future<bool?> showAdminDeleteConfirmDialog(BuildContext context) {
+  return showDialog<bool>(
+    context: context,
+    builder: (_) => const AdminDeleteConfirmDialog(),
+  );
+}
+
 class AdminStatusFilterBar extends StatelessWidget {
   const AdminStatusFilterBar({
     super.key,

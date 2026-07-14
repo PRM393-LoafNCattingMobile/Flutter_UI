@@ -62,23 +62,7 @@ class _AdminCatalogScreenState extends State<AdminCatalogScreen> {
 
   Future<void> _deleteProduct(Product product) async {
     final provider = context.read<AdminCatalogProvider>();
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text(AppStrings.adminDeleteConfirmTitle),
-        content: const Text(AppStrings.adminDeleteConfirmMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text(AppStrings.adminCancelButton),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text(AppStrings.adminDeleteButton),
-          ),
-        ],
-      ),
-    );
+    final confirmed = await showAdminDeleteConfirmDialog(context);
     if (confirmed != true) return;
     final ok = await provider.deleteProduct(product.productId);
     if (!mounted) return;

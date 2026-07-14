@@ -205,23 +205,8 @@ class _CatFilterSheetState extends State<_CatFilterSheet> {
   }
 }
 
-Future<bool?> _confirmDelete(BuildContext context) => showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text(AppStrings.adminDeleteConfirmTitle),
-        content: const Text(AppStrings.adminDeleteConfirmMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text(AppStrings.adminCancelButton),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text(AppStrings.adminDeleteButton),
-          ),
-        ],
-      ),
-    );
+Future<bool?> _confirmDelete(BuildContext context) =>
+    showAdminDeleteConfirmDialog(context);
 
 class AdminCatFormScreen extends StatefulWidget {
   const AdminCatFormScreen({

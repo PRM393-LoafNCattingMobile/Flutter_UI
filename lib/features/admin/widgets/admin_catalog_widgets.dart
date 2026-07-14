@@ -41,7 +41,8 @@ class _AdminCatalogFilterHeader extends StatelessWidget {
                   child: ChoiceChip(
                     avatar: const Icon(Icons.local_cafe_outlined, size: 17),
                     label: Text(category.name),
-                    selected: provider.selectedCategoryId == category.categoryId,
+                    selected:
+                        provider.selectedCategoryId == category.categoryId,
                     onSelected: (_) =>
                         provider.applyCategoryFilter(category.categoryId),
                   ),
@@ -425,10 +426,10 @@ class _ProductCard extends StatelessWidget {
                 ? Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      TextButton.icon(
+                      IconButton(
                         onPressed: onEdit,
+                        tooltip: AppStrings.adminEditProductAction,
                         icon: const Icon(Icons.edit_outlined),
-                        label: const Text(AppStrings.adminSaveButton),
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete_outline),

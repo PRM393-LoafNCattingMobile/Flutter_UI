@@ -36,7 +36,7 @@ class AppStrings {
   static String verificationExpiresAt(DateTime expiresAtLocal) {
     final hour = expiresAtLocal.hour.toString().padLeft(2, '0');
     final minute = expiresAtLocal.minute.toString().padLeft(2, '0');
-    return 'Mã hiện tại hết hạn lúc $hour:$minute.';
+    return 'Mã xác minh hết hạn lúc $hour:$minute.';
   }
 
   static const profileTitle = 'Hồ sơ';
@@ -117,11 +117,11 @@ class AppStrings {
       'Giỏ hàng đang trống nên chưa thể thanh toán.';
   static const backToCartButton = 'Quay lại giỏ hàng';
   static const checkoutLoginRequiredMessage =
-      'Vui lòng đăng nhập trước khi đặt đơn.';
+      'Vui lòng đăng nhập trước khi đặt hàng.';
   static const goToLoginButton = 'Đến trang đăng nhập';
   static const checkoutHeroTitle = 'Sắp xong rồi';
   static const checkoutHeroSubtitle =
-      'Xác nhận thông tin trước khi gửi đơn đến quán.';
+      'Xác nhận thông tin trước khi gửi đơn hàng đến quán.';
   static const receiverNameLabel = 'Tên người nhận';
   static const receiverNameFieldName = 'tên người nhận';
   static const phoneNumberLabel = 'Số điện thoại';
@@ -132,19 +132,19 @@ class AppStrings {
   static const creditCardPaymentMethod = 'Thẻ tín dụng';
   static const eWalletPaymentMethod = 'Ví điện tử';
   static const bankTransferPaymentMethod = 'Chuyển khoản ngân hàng';
-  static const placeOrderButton = 'Đặt đơn';
-  static const orderPlacedSuccessTitle = 'Đặt đơn thành công';
+  static const placeOrderButton = 'Đặt hàng';
+  static const orderPlacedSuccessTitle = 'Đặt hàng thành công';
   static const okButton = 'OK';
   static const takeAwayOrderType = 'Mang đi';
   static const closeButton = 'Đóng';
   static const continuePaymentButton = 'Thanh toán tiếp';
   static const reviewAgainButton = 'Kiểm tra lại';
-  static const pendingPaymentTitle = 'Bạn còn đơn chờ thanh toán';
+  static const pendingPaymentTitle = 'Bạn có đơn chờ thanh toán';
   static String orderPaidMessage(int orderId) =>
       'Đơn #$orderId đã được thanh toán.';
   static const payOsTitle = 'Thanh toán PayOS';
   static String orderPlacedSuccessMessage(String receiverName) =>
-      'Đơn của $receiverName đã được gửi đến quán.';
+      'Đơn hàng của $receiverName đã được gửi đến quán.';
 
   static const reservationTitle = 'Đặt bàn';
   static const reservationHeroTitle = 'Đặt trước một chiếc bàn';
@@ -153,12 +153,13 @@ class AppStrings {
   static const dateLabel = 'Ngày';
   static const timeLabel = 'Giờ';
   static const guestCountLabel = 'Số khách';
-  static const loadAvailableTablesButton = 'Tải bàn trống';
+  static const loadAvailableTablesButton = 'Tìm bàn trống';
   static const tableLabel = 'Bàn';
   static const guestNameLabel = 'Tên khách';
   static const noteLabel = 'Ghi chú';
-  static const reservationCreatedMessage = 'Đặt bàn thành công';
-  static const reservationFailedMessage = 'Đặt bàn thất bại';
+  static const reservationCreatedMessage = 'Đặt bàn thành công.';
+  static const reservationFailedMessage =
+      'Không thể đặt bàn. Vui lòng thử lại.';
   static const confirmReservationButton = 'Xác nhận đặt bàn';
   static String reservationTableOption(String tableName, int capacity) =>
       '$tableName - $capacity khách';
@@ -178,7 +179,7 @@ class AppStrings {
   static const outOfStockLabel = 'Hết hàng';
   static String productAddedToCart(String productName) =>
       '$productName đã được thêm vào giỏ hàng';
-  static const resetButton = 'Reset';
+  static const resetButton = 'Đặt lại';
   static const filterSheetTitle = 'Bộ lọc';
   static const availabilityFilterTitle = 'Tình trạng';
   static const priceFilterTitle = 'Giá';
@@ -186,7 +187,7 @@ class AppStrings {
   static const discountedOnlyLabel = 'Chỉ món giảm giá';
   static const applyButton = 'Áp dụng';
   static String productStockLimitReached(String productName) =>
-      '$productName đã đạt giới hạn tồn kho';
+      '$productName chỉ còn số lượng này.';
 
   static const productNoDescription = 'Món này chưa có mô tả.';
   static String stockCountLabel(int count) => 'Còn $count';
@@ -195,7 +196,7 @@ class AppStrings {
   static String addedItemsToCartMessage(int quantity) =>
       'Đã thêm $quantity món vào giỏ hàng';
   static const cartStockLimitReachedMessage =
-      'Giỏ hàng đã đạt giới hạn tồn kho cho món này.';
+      'Món này chỉ còn số lượng hiện tại trong kho.';
   static const cartSessionExpiredMessage =
       'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
   static const cartSyncFailedMessage =
@@ -205,6 +206,7 @@ class AppStrings {
   static const similarItemsTitle = 'Món tương tự';
   static const retryButton = 'Thử lại';
   static const unknownBreed = 'Chưa rõ giống';
+  static const catNoDescriptionMessage = 'Bé mèo này chưa có mô tả.';
 
   // Admin/Staff shell (Task 8 - mobile admin foundation).
   static const adminDashboardNavLabel = 'Tổng quan';
@@ -212,7 +214,7 @@ class AppStrings {
   static const adminReservationsNavLabel = 'Đặt bàn';
   static const adminCatalogNavLabel = 'Thực đơn';
   static const adminCatsNavLabel = 'Mèo';
-  static const adminChatNavLabel = 'Chat';
+  static const adminChatNavLabel = 'Tin nhắn';
   static const adminMoreNavLabel = 'Thêm';
 
   static const adminDashboardTitle = 'Tổng quan';
@@ -235,13 +237,13 @@ class AppStrings {
   static const adminStatusUpdatedMessage = 'Đã cập nhật trạng thái.';
   static const adminPaymentStatusPrefix = 'Thanh toán: ';
   static const adminNoNextStatusMessage =
-      'Đơn này chưa có thao tác trạng thái phù hợp.';
+      'Đơn hàng này không cần cập nhật thêm.';
   static const adminOrderDetailFallbackError = 'Không tải được chi tiết đơn.';
-  static const adminCookingDetailButton = 'Chi tiết nấu';
-  static const adminItemsToPrepareTitle = 'Món cần chuẩn bị';
-  static const adminOrderHasNoItemsMessage = 'Đơn này chưa có dòng món.';
+  static const adminCookingDetailButton = 'Chi tiết đơn hàng';
+  static const adminItemsToPrepareTitle = 'Món trong đơn';
+  static const adminOrderHasNoItemsMessage = 'Đơn này chưa có món nào.';
   static const adminReservationFinalStatusMessage =
-      'Lượt đặt bàn này đã ở trạng thái cuối.';
+      'Lượt đặt bàn này không cần cập nhật thêm.';
   static String adminOrderCodeLabel(int id) => 'Đơn #$id';
   static String adminOrderCustomerLabel(String name) => 'Khách: $name';
   static String adminReservationGuestLabel(String name, String phone) =>
@@ -256,13 +258,17 @@ class AppStrings {
   static const adminTablesTitle = 'Quản lý bàn';
 
   static const adminAddProductTitle = 'Thêm sản phẩm';
-  static const adminEditProductTitle = 'Sửa sản phẩm';
+  static const adminEditProductTitle = 'Sửa thông tin sản phẩm';
+  static const adminEditProductAction = 'Sửa thông tin sản phẩm';
   static const adminAddCategoryTitle = 'Thêm danh mục';
-  static const adminEditCategoryTitle = 'Sửa danh mục';
+  static const adminEditCategoryTitle = 'Sửa thông tin danh mục';
+  static const adminEditCategoryAction = 'Sửa thông tin danh mục';
   static const adminAddCatTitle = 'Thêm mèo';
-  static const adminEditCatTitle = 'Sửa hồ sơ mèo';
+  static const adminEditCatTitle = 'Sửa thông tin mèo';
+  static const adminEditCatAction = 'Sửa thông tin mèo';
   static const adminAddTableTitle = 'Thêm bàn';
-  static const adminEditTableTitle = 'Sửa bàn';
+  static const adminEditTableTitle = 'Sửa thông tin bàn';
+  static const adminEditTableAction = 'Sửa thông tin bàn';
 
   static const adminUpdateStockTitle = 'Cập nhật tồn kho';
   static const adminSaveButton = 'Lưu';
@@ -278,7 +284,7 @@ class AppStrings {
   static const productPriceLabel = 'Giá';
   static const productDiscountPriceLabel = 'Giá khuyến mãi';
   static const productStockLabel = 'Tồn kho';
-  static const productPictureLabel = 'Ảnh (S3 key)';
+  static const productPictureLabel = 'Ảnh';
   static const productCategoryLabel = 'Danh mục';
   static const productAvailableLabel = 'Đang bán';
 
@@ -289,7 +295,7 @@ class AppStrings {
   static const catAgeLabel = 'Tuổi';
   static const catGenderLabel = 'Giới tính';
   static const catBreedLabel = 'Giống';
-  static const catPictureLabel = 'Ảnh (S3 key)';
+  static const catPictureLabel = 'Ảnh';
   static const catDescriptionLabel = 'Mô tả';
   static const catFriendlinessLabel = 'Thân thiện (1-5)';
   static const catCutenessLabel = 'Đáng yêu (1-5)';
@@ -302,28 +308,28 @@ class AppStrings {
   static const tableDescriptionLabel = 'Mô tả';
   static const tableStatusLabel = 'Trạng thái';
 
-  static const adminFieldRequiredMessage = 'Không được để trống';
-  static const adminInvalidNumberMessage = 'Giá trị không hợp lệ';
+  static const adminFieldRequiredMessage = 'Vui lòng không để trống.';
+  static const adminInvalidNumberMessage = 'Vui lòng nhập số hợp lệ.';
   static const imageUploadHint = 'Chỉ hỗ trợ JPG/PNG, tối đa 1 MB.';
   static const imageUploadButton = 'Tải ảnh lên';
   static const imageReplaceButton = 'Đổi ảnh';
   static const imageRemoveButton = 'Xóa ảnh';
-  static const imageUploadSuccessMessage = 'Đã tải ảnh lên S3.';
+  static const imageUploadSuccessMessage = 'Đã tải ảnh lên.';
   static const imageUploadFailedMessage = 'Tải ảnh thất bại.';
 
   // Admin/Staff - Dashboard, Users, Store, More (Task 12).
   static const adminDashboardPendingOrders = 'Đơn chờ xử lý';
   static const adminDashboardTodayReservations = 'Đặt bàn hôm nay';
   static const adminDashboardLowStock = 'Sản phẩm sắp hết';
-  static const adminDashboardCatsNotWorking = 'Mèo nghỉ/ốm';
+  static const adminDashboardCatsNotWorking = 'Mèo đang nghỉ';
   static const adminLowStockOnlyLabel = 'Sản phẩm sắp hết';
-  static const adminCatsNotWorkingOnlyLabel = 'Mèo nghỉ/ốm';
+  static const adminCatsNotWorkingOnlyLabel = 'Mèo đang nghỉ';
   static const adminTableMapTitle = 'Sơ đồ bàn';
   static const adminSendButton = 'Gửi';
 
   static const adminUsersTitle = 'Quản lý người dùng';
   static const adminUsersEmptyMessage = 'Chưa có người dùng nào.';
-  static const adminUsersSearchHint = 'Tìm theo tên/email/SĐT';
+  static const adminUsersSearchHint = 'Tìm theo tên, email hoặc SĐT';
   static const adminCreateStaffTitle = 'Tạo nhân viên';
   static const adminChangeRoleTitle = 'Đổi vai trò';
   static const adminUserActiveLabel = 'Đang hoạt động';
@@ -337,8 +343,8 @@ class AppStrings {
   static const adminStoreAddressLabel = 'Địa chỉ';
   static const adminStorePhoneLabel = 'Số điện thoại';
   static const adminStoreHoursLabel = 'Giờ mở cửa';
-  static const adminStoreLatitudeLabel = 'Vĩ độ (latitude)';
-  static const adminStoreLongitudeLabel = 'Kinh độ (longitude)';
+  static const adminStoreLatitudeLabel = 'Vĩ độ';
+  static const adminStoreLongitudeLabel = 'Kinh độ';
 
   static const adminMoreManageTables = 'Quản lý bàn';
   static const adminMoreManageUsers = 'Quản lý người dùng';

@@ -34,8 +34,7 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
     final options = _nextOrderStatusOptions(order, lookups.orderStatuses);
     if (options.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text(AppStrings.adminNoNextStatusMessage)),
+        const SnackBar(content: Text(AppStrings.adminNoNextStatusMessage)),
       );
       return;
     }
@@ -63,7 +62,8 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
     if (!mounted) return;
     if (detail == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(provider.error ?? AppStrings.adminOrderDetailFallbackError),
+        content:
+            Text(provider.error ?? AppStrings.adminOrderDetailFallbackError),
       ));
       return;
     }
@@ -194,7 +194,7 @@ class _OrderCard extends StatelessWidget {
           if (!canPrepare) ...[
             const SizedBox(height: 10),
             Text(
-              'Đơn chuyển khoản chưa thanh toán nên chưa thể bắt đầu nấu.',
+              'Đơn chuyển khoản chưa thanh toán nên chưa thể bắt đầu chuẩn bị.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.error,
                 fontWeight: FontWeight.w700,
@@ -305,7 +305,8 @@ class _OrderDetailSheet extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 18),
-            Text(AppStrings.adminItemsToPrepareTitle, style: theme.textTheme.titleMedium),
+            Text(AppStrings.adminItemsToPrepareTitle,
+                style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             if (order.items.isEmpty)
               Text(AppStrings.adminOrderHasNoItemsMessage,
@@ -347,11 +348,6 @@ class _OrderDetailSheet extends StatelessWidget {
                       ),
                     )
                     .toList(),
-              )
-            else
-              Text(
-                'Đơn đã ở trạng thái cuối.',
-                style: theme.textTheme.bodySmall?.copyWith(color: loafMuted),
               ),
           ],
         ),

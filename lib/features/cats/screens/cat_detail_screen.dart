@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:loafncatting_mobile/core/constants/app_strings.dart';
+import 'package:loafncatting_mobile/features/cats/utils/cat_status_ui.dart';
 import 'package:loafncatting_mobile/models/models.dart';
 import 'package:loafncatting_mobile/theme/app_theme.dart';
 import 'package:loafncatting_mobile/widgets/cafe_widgets.dart';
@@ -38,12 +40,13 @@ class CatDetailScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   CafeInfoChip(
-                      label: cat.statusName,
-                      icon: Icons.favorite,
-                      color: _statusColor(context, cat.statusName)),
+                    label: catStatusDisplayName(cat.statusName),
+                    icon: Icons.favorite,
+                    color: catStatusColor(context, cat.statusName),
+                  ),
                   const SizedBox(height: 12),
                   Text(
-                    cat.description ?? 'Bé mèo này chưa có mô tả.',
+                    cat.description ?? AppStrings.catNoDescriptionMessage,
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
@@ -71,12 +74,5 @@ class CatDetailScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Color _statusColor(BuildContext context, String status) {
-    final lower = status.toLowerCase();
-    if (lower.contains('đang làm việc')) return loafSuccess;
-    if (lower.contains('bị bệnh')) return const Color(0xFF4D6FB8);
-    return Theme.of(context).colorScheme.error;
   }
 }

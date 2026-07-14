@@ -216,10 +216,10 @@ class _AdminCatsScreenState extends State<AdminCatsScreen> {
                       ? Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            TextButton.icon(
+                            IconButton(
                               onPressed: () => _openForm(cat),
+                              tooltip: AppStrings.adminEditCatAction,
                               icon: const Icon(Icons.edit_outlined),
-                              label: const Text(AppStrings.adminSaveButton),
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete_outline),
