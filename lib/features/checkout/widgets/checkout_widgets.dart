@@ -227,12 +227,7 @@ class _CheckoutFormCard extends StatelessWidget {
               labelText: AppStrings.paymentMethodLabel,
               prefixIcon: Icon(Icons.payments_outlined),
             ),
-            items: const [
-              AppStrings.cashPaymentMethod,
-              AppStrings.creditCardPaymentMethod,
-              AppStrings.eWalletPaymentMethod,
-              AppStrings.bankTransferPaymentMethod,
-            ]
+            items: supportedCheckoutPaymentMethods
                 .map(
                   (item) => DropdownMenuItem(value: item, child: Text(item)),
                 )

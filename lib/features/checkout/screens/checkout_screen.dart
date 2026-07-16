@@ -15,6 +15,11 @@ import 'package:loafncatting_mobile/widgets/state_views.dart';
 import 'package:provider/provider.dart';
 part '../widgets/checkout_widgets.dart';
 
+const supportedCheckoutPaymentMethods = [
+  AppStrings.cashPaymentMethod,
+  AppStrings.bankTransferPaymentMethod,
+];
+
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
 
@@ -155,7 +160,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ),
                     const SizedBox(height: 20),
                     FilledButton.icon(
-                      onPressed: placing ? null : () => _submitOrder(auth, cart),
+                      onPressed:
+                          placing ? null : () => _submitOrder(auth, cart),
                       icon: placing
                           ? const SizedBox(
                               width: 18,
@@ -306,7 +312,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ),
       );
       if (!mounted) return;
-      Navigator.pop(context);
+      Navigator.of(context).popUntil(
+        (route) => route.settings.name == AppRoutes.home || route.isFirst,
+      );
     } catch (e) {
       setState(() => error = friendlyErrorMessage(e));
     } finally {
@@ -384,7 +392,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
         );
         if (!mounted) return;
-        Navigator.pop(context);
+        Navigator.of(context).popUntil(
+          (route) => route.settings.name == AppRoutes.home || route.isFirst,
+        );
       } else {
         await _refreshPendingAfterUnfinishedPayment(
           api: auth.api,
@@ -427,7 +437,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       pending = fallbackPendingOrder;
     }
 
-    if ((pending != null || fallbackPendingOrder != null) && cart.items.isNotEmpty) {
+    if ((pending != null || fallbackPendingOrder != null) &&
+        cart.items.isNotEmpty) {
       await cart.clearSynced(userId);
     }
 

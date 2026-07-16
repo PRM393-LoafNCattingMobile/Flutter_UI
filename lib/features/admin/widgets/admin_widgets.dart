@@ -386,8 +386,9 @@ class AdminStatusFilterBar extends StatelessWidget {
 
 String formatAdminDateTime(DateTime dateTime) {
   String two(int value) => value.toString().padLeft(2, '0');
-  return '${two(dateTime.day)}/${two(dateTime.month)}/${dateTime.year} '
-      '${two(dateTime.hour)}:${two(dateTime.minute)}';
+  final local = dateTime.toLocal();
+  return '${two(local.day)}/${two(local.month)}/${local.year} '
+      '${two(local.hour)}:${two(local.minute)}';
 }
 
 String formatAdminApiDate(DateTime dateTime) {
